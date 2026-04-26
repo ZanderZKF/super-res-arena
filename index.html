@@ -131,7 +131,7 @@
                 <!-- LR Panel -->
                 <div class="sync-panel" ref="lrPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
                     <div class="panel-label">LR 原图 (低分辨率)</div>
-                    <div class="img-wrapper" :style="wrapperStyle()">
+                    <div class="img-wrapper" :style="wrapperStyle">
                         <img ref="lrImg" :src="currentTask.lrImage" @load="onImgLoad('lr')" />
                     </div>
                     <div class="zoom-info">{{ globalScale.toFixed(1) }}x</div>
@@ -143,7 +143,7 @@
                         Model A <span v-if="revealed" class="text-indigo-300 ml-1">({{ currentTask.displayModelAName }})</span>
                         <span v-else class="text-gray-400 ml-1">(???)</span>
                     </div>
-                    <div class="img-wrapper" :style="wrapperStyle()">
+                    <div class="img-wrapper" :style="wrapperStyle">
                         <img ref="modelAImg" :src="currentTask.displayModelA" @load="onImgLoad('a')" />
                     </div>
                     <div class="zoom-info">{{ globalScale.toFixed(1) }}x</div>
@@ -155,7 +155,7 @@
                         Model B <span v-if="revealed" class="text-indigo-300 ml-1">({{ currentTask.displayModelBName }})</span>
                         <span v-else class="text-gray-400 ml-1">(???)</span>
                     </div>
-                    <div class="img-wrapper" :style="wrapperStyle()">
+                    <div class="img-wrapper" :style="wrapperStyle">
                         <img ref="modelBImg" :src="currentTask.displayModelB" @load="onImgLoad('b')" />
                     </div>
                     <div class="zoom-info">{{ globalScale.toFixed(1) }}x</div>
@@ -250,7 +250,6 @@
                 const globalOffsetX = ref(0);
                 const globalOffsetY = ref(0);
                 const imgNaturalSize = { lr: { w: 800, h: 800 }, a: { w: 800, h: 800 }, b: { w: 800, h: 800 } };
-                const onImgLoad = (panel) => {};
                 let isDragging = false;
                 let dragStartX = 0, dragStartY = 0;
                 let dragStartOffsetX = 0, dragStartOffsetY = 0;
@@ -284,11 +283,11 @@
 
                 const currentTask = computed(() => tasks.value[currentTaskIndex.value] || {});
 
-                const wrapperStyle = () => {
+                const wrapperStyle = computed(() => {
                     return {
                         transform: `translate(${globalOffsetX.value}px, ${globalOffsetY.value}px) scale(${globalScale.value})`
                     };
-                };
+                });
 
                 const onImgLoad = (panel) => {
                     const img = panel === 'lr' ? document.querySelector('.sync-panel:nth-child(1) img') :
