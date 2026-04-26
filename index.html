@@ -374,30 +374,29 @@
                     const webhookUrl = 'https://nankai.feishu.cn/base/automation/webhook/event/L3lIafnaEw3BkThLPb2cogWyn5g';
                     
                     try {
-                        const payload = {
-                            timestamp: new Date().toISOString(),
-                            totalTasks: tasks.value.length,
-                            results: results.value.map(r => ({
+                        // 逐条发送每一项评测结果，方便飞书多维表格直接映射插入
+                        for (const r of results.value) {
+                            const taskInfo = tasks.value.find(t => t.originalId === r.originalId);
+                            const payload = {
+                                timestamp: new Date().toISOString(),
                                 task_id: r.originalId,
                                 choice: r.choice,
                                 winner: r.winnerName || '无',
-                                modelA: tasks.value.find(t => t.originalId === r.originalId).displayModelAName,
-                                modelB: tasks.value.find(t => t.originalId === r.originalId).displayModelBName,
-                            }))
-                        };
+                                modelA: taskInfo.displayModelAName,
+                                modelB: taskInfo.displayModelBName
+                            };
 
-                        // 使用 mode: 'no-cors' 强制发送请求，并伪装成 text/plain
-                        // 注意：这种模式下 response 是不透明的，我们无法读取飞书返回的真实状态
-                        const response = await fetch(webhookUrl, {
-                            method: 'POST',
-                            mode: 'no-cors',
-                            headers: {
-                                'Content-Type': 'text/plain', // 必须是这个才能绕过预检
-                            },
-                            body: JSON.stringify(payload)
-                        });
+                            await fetch(webhookUrl, {
+                                method: 'POST',
+                                mode: 'no-cors',
+                                headers: {
+                                    'Content-Type': 'text/plain',
+                                },
+                                body: JSON.stringify(payload)
+                            });
+                        }
 
-                        // 因为是盲发，只要没抛出网络异常，我们就假设发送成功了
+                        // 全部盲发完毕
                         submitSuccess.value = true;
                     } catch (error) {
                         submitError.value = true;
