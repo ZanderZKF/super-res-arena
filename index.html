@@ -94,10 +94,6 @@
             from { opacity: 0; transform: translateY(-5px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .lr-pixelated {
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
-        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -135,10 +131,10 @@
                 <!-- LR Panel -->
                 <div class="sync-panel" ref="lrPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
                     <div class="panel-label">LR 原图 (低分辨率)</div>
-                    <div class="img-wrapper" :style="wrapperStyle('lr')">
-                        <img ref="lrImg" :src="currentTask.lrImage" class="lr-pixelated" @load="onImgLoad('lr')" />
+                    <div class="img-wrapper" :style="wrapperStyle()">
+                        <img ref="lrImg" :src="currentTask.lrImage" @load="onImgLoad('lr')" />
                     </div>
-                    <div class="zoom-info">{{ (globalScale * lrBaseScale).toFixed(1) }}x</div>
+                    <div class="zoom-info">{{ globalScale.toFixed(1) }}x</div>
                 </div>
 
                 <!-- Model A Panel -->
@@ -147,7 +143,7 @@
                         Model A <span v-if="revealed" class="text-indigo-300 ml-1">({{ currentTask.displayModelAName }})</span>
                         <span v-else class="text-gray-400 ml-1">(???)</span>
                     </div>
-                    <div class="img-wrapper" :style="wrapperStyle('a')">
+                    <div class="img-wrapper" :style="wrapperStyle()">
                         <img ref="modelAImg" :src="currentTask.displayModelA" @load="onImgLoad('a')" />
                     </div>
                     <div class="zoom-info">{{ globalScale.toFixed(1) }}x</div>
@@ -159,7 +155,7 @@
                         Model B <span v-if="revealed" class="text-indigo-300 ml-1">({{ currentTask.displayModelBName }})</span>
                         <span v-else class="text-gray-400 ml-1">(???)</span>
                     </div>
-                    <div class="img-wrapper" :style="wrapperStyle('b')">
+                    <div class="img-wrapper" :style="wrapperStyle()">
                         <img ref="modelBImg" :src="currentTask.displayModelB" @load="onImgLoad('b')" />
                     </div>
                     <div class="zoom-info">{{ globalScale.toFixed(1) }}x</div>
@@ -226,10 +222,10 @@
         const { createApp, ref, reactive, computed, onMounted } = Vue;
 
         const rawDatasets = [
-            { id: 1, description: "Real-world degradation 4x upscale", lrImage: "https://picsum.photos/seed/lr1/200/200", modelA: "https://picsum.photos/seed/hr1a/800/800", modelB: "https://picsum.photos/seed/hr1b/800/800", modelAName: "Real-ESRGAN", modelBName: "SwinIR" },
-            { id: 2, description: "Bicubic 4x + Gaussian Noise", lrImage: "https://picsum.photos/seed/lr2/200/200", modelA: "https://picsum.photos/seed/hr2a/800/800", modelB: "https://picsum.photos/seed/hr2b/800/800", modelAName: "BSRGAN", modelBName: "HAT" },
-            { id: 3, description: "Severe degradation 4x upscale", lrImage: "https://picsum.photos/seed/lr3/200/200", modelA: "https://picsum.photos/seed/hr3a/800/800", modelB: "https://picsum.photos/seed/hr3b/800/800", modelAName: "CodeFormer", modelBName: "GFPGAN" },
-            { id: 4, description: "Unknown real-world LR", lrImage: "https://picsum.photos/seed/lr4/200/200", modelA: "https://picsum.photos/seed/hr4a/800/800", modelB: "https://picsum.photos/seed/hr4b/800/800", modelAName: "StableSR", modelBName: "Real-ESRGAN" }
+            { id: 1, description: "Real-world degradation 4x upscale", lrImage: "https://picsum.photos/seed/lr1/800/800", modelA: "https://picsum.photos/seed/hr1a/800/800", modelB: "https://picsum.photos/seed/hr1b/800/800", modelAName: "Real-ESRGAN", modelBName: "SwinIR" },
+            { id: 2, description: "Bicubic 4x + Gaussian Noise", lrImage: "https://picsum.photos/seed/lr2/800/800", modelA: "https://picsum.photos/seed/hr2a/800/800", modelB: "https://picsum.photos/seed/hr2b/800/800", modelAName: "BSRGAN", modelBName: "HAT" },
+            { id: 3, description: "Severe degradation 4x upscale", lrImage: "https://picsum.photos/seed/lr3/800/800", modelA: "https://picsum.photos/seed/hr3a/800/800", modelB: "https://picsum.photos/seed/hr3b/800/800", modelAName: "CodeFormer", modelBName: "GFPGAN" },
+            { id: 4, description: "Unknown real-world LR", lrImage: "https://picsum.photos/seed/lr4/800/800", modelA: "https://picsum.photos/seed/hr4a/800/800", modelB: "https://picsum.photos/seed/hr4b/800/800", modelAName: "StableSR", modelBName: "Real-ESRGAN" }
         ];
 
         const shuffleArray = (arr) => {
@@ -253,9 +249,8 @@
                 const globalScale = ref(1);
                 const globalOffsetX = ref(0);
                 const globalOffsetY = ref(0);
-                const imgNaturalSize = { lr: { w: 200, h: 200 }, a: { w: 800, h: 800 }, b: { w: 800, h: 800 } };
-                const lrBaseScale = 4; // LR 是 200，超分结果是 800，所以 LR 要放大 4 倍才能和右边一样大
-
+                const imgNaturalSize = { lr: { w: 800, h: 800 }, a: { w: 800, h: 800 }, b: { w: 800, h: 800 } };
+                const onImgLoad = (panel) => {};
                 let isDragging = false;
                 let dragStartX = 0, dragStartY = 0;
                 let dragStartOffsetX = 0, dragStartOffsetY = 0;
@@ -289,10 +284,9 @@
 
                 const currentTask = computed(() => tasks.value[currentTaskIndex.value] || {});
 
-                const wrapperStyle = (panel) => {
-                    const baseScale = panel === 'lr' ? lrBaseScale : 1;
+                const wrapperStyle = () => {
                     return {
-                        transform: `translate(${globalOffsetX.value}px, ${globalOffsetY.value}px) scale(${globalScale.value * baseScale})`
+                        transform: `translate(${globalOffsetX.value}px, ${globalOffsetY.value}px) scale(${globalScale.value})`
                     };
                 };
 
