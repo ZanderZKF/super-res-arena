@@ -137,7 +137,6 @@
                     <div class="zoom-info">{{ globalScale.toFixed(1) }}x</div>
                 </div>
 
-                <!-- Model A Panel -->
                 <div class="sync-panel" ref="modelAPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
                     <div class="panel-label">
                         Model A <span v-if="revealed" class="text-indigo-300 ml-1">({{ currentTask.displayModelAName }})</span>
@@ -210,6 +209,17 @@
                         </li>
                     </ul>
                 </div>
+                
+                <div v-if="isSubmitting" class="text-sm text-blue-600 font-medium animate-pulse">
+                    <i class="fa-solid fa-spinner fa-spin mr-1"></i> 正在将结果上传至飞书多维表格...
+                </div>
+                <div v-else-if="submitSuccess" class="text-sm text-green-600 font-medium">
+                    <i class="fa-solid fa-cloud-arrow-up mr-1"></i> 结果已成功上传至飞书
+                </div>
+                <div v-else-if="submitError" class="text-sm text-red-500 font-medium">
+                    <i class="fa-solid fa-triangle-exclamation mr-1"></i> 上传飞书失败，请检查网络或 Webhook 配置
+                </div>
+
                 <button @click="restart" class="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 font-medium">
                     <i class="fa-solid fa-rotate-right mr-2"></i>重新开始
                 </button>
@@ -219,7 +229,7 @@
     </div>
 
     <script>
-        const { createApp, ref, reactive, computed, onMounted } = Vue;
+        const { createApp, ref, computed, onMounted } = Vue;
 
         const rawDatasets = [
             { id: 1, description: "Real-world degradation 4x upscale", lrImage: "https://picsum.photos/seed/lr1/800/800", modelA: "https://picsum.photos/seed/hr1a/800/800", modelB: "https://picsum.photos/seed/hr1b/800/800", modelAName: "Real-ESRGAN", modelBName: "SwinIR" },
@@ -346,6 +356,56 @@
                         resetViewer();
                     } else {
                         isFinished.value = true;
+                        submitResultsToFeishu();
+                    }
+                };
+
+                const isSubmitting = ref(false);
+                const submitSuccess = ref(false);
+                const submitError = ref(false);
+
+                const submitResultsToFeishu = async () => {
+                    isSubmitting.value = true;
+                    submitSuccess.value = false;
+                    submitError.value = false;
+
+                    const webhookUrl = 'https://nankai.feishu.cn/base/automation/webhook/event/L3lIafnaEw3BkThLPb2cogWyn5g';
+                    
+                    try {
+                        // 构建要发送的数据
+                        // 飞书 Webhook 接收的数据结构可以根据你实际创建的表结构来调整
+                        // 这里我们把每一条投票记录和整体的时间打包发送
+                        const payload = {
+                            timestamp: new Date().toISOString(),
+                            totalTasks: tasks.value.length,
+                            results: results.value.map(r => ({
+                                task_id: r.originalId,
+                                choice: r.choice,
+                                winner: r.winnerName || '无',
+                                modelA: tasks.value.find(t => t.originalId === r.originalId).displayModelAName,
+                                modelB: tasks.value.find(t => t.originalId === r.originalId).displayModelBName,
+                            }))
+                        };
+
+                        const response = await fetch(webhookUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (response.ok) {
+                            submitSuccess.value = true;
+                        } else {
+                            submitError.value = true;
+                            console.error('Feishu Webhook Error:', response.statusText);
+                        }
+                    } catch (error) {
+                        submitError.value = true;
+                        console.error('Feishu Webhook Request Failed:', error);
+                    } finally {
+                        isSubmitting.value = false;
                     }
                 };
 
@@ -354,12 +414,15 @@
                     currentTaskIndex.value = 0;
                     revealed.value = false;
                     isFinished.value = false;
+                    submitSuccess.value = false;
+                    submitError.value = false;
                     resetViewer();
                     initTasks();
                 };
 
                 return {
                     tasks, currentTaskIndex, currentTask, revealed, isFinished, results,
+                    isSubmitting, submitSuccess, submitError,
                     globalScale, wrapperStyle, onImgLoad, onWheel,
                     onMouseDown, onMouseMove, onMouseUp, vote, nextTask, restart
                 };
