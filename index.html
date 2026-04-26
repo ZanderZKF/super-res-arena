@@ -199,14 +199,12 @@
                     </button>
                 </div>
 
-                <!-- 揭晓 & 下一题 -->
-                <div v-if="revealed" class="w-full max-w-xl flex flex-col items-center gap-3 fade-in">
-                    <div class="text-green-700 font-bold flex items-center gap-2 bg-green-50 px-6 py-3 rounded-lg border border-green-200">
-                        <i class="fa-solid fa-circle-check"></i> 已记录！Model A = {{ currentTask.displayModelAName }} | Model B = {{ currentTask.displayModelBName }}
+                <!-- 揭晓 -->
+                <div class="mt-4 flex flex-col items-center">
+                    <div v-if="revealed" class="px-6 py-2 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm font-bold shadow-inner mb-4 flex items-center animate-fade-in-up">
+                        <i class="fa-solid fa-circle-check mr-2"></i> 
+                        已记录! 真实模型为：左侧 = {{ currentTask.displayModelAName }} | 右侧 = {{ currentTask.displayModelBName }}
                     </div>
-                    <button @click="nextTask" class="px-8 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold transition-colors flex items-center gap-2">
-                        <span>{{ completedCount < targetTaskCount ? '下一组' : '继续评测 (已达标，感谢支持)' }}</span> <i class="fa-solid fa-arrow-right"></i>
-                    </button>
                 </div>
             </div>
 
@@ -381,6 +379,11 @@
 
                     // 每投完一票，立刻把这条结果发给飞书
                     submitSingleVoteToFeishu(record);
+                    
+                    // 延迟 1 秒后自动切换到下一题（给用户留出 1 秒的时间看一眼胜出结果）
+                    setTimeout(() => {
+                        nextTask();
+                    }, 1000);
                 };
 
                 const isSubmitting = ref(false);
