@@ -3,19 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super-Res Arena - 图像超分辨率评测</title>
+    <title>Super-Res Arena - 图像超分辨率同步对比评测</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         [v-cloak] { display: none; }
+        .sync-viewer-container {
+            display: flex;
+            gap: 12px;
+            height: calc(100vh - 220px);
+            overflow: hidden;
+        }
+        .sync-panel {
+            flex: 1;
+            background: #1a1a1a;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            cursor: grab;
+            user-select: none;
+        }
+        .sync-panel:active { cursor: grabbing; }
+        .sync-panel img {
+            position: absolute;
+            transform-origin: 0 0;
+            pointer-events: none;
+            image-rendering: auto;
+        }
+        .panel-label {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 10;
+            white-space: nowrap;
+        }
+        .zoom-controls {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+        .zoom-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.9);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.2s;
+            color: #333;
+        }
+        .zoom-btn:hover { background: white; transform: scale(1.1); }
+        .zoom-info {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-family: monospace;
+            z-index: 10;
+        }
         .fade-in { animation: fadeIn 0.5s ease-in; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-5px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .image-pixelated {
+        .lr-pixelated {
             image-rendering: pixelated;
             image-rendering: crisp-edges;
         }
@@ -24,214 +96,136 @@
 <body class="bg-gray-50 text-gray-800">
     <div id="app" v-cloak class="h-screen flex flex-col">
         <!-- Header -->
-        <header class="bg-white border-b px-6 py-4 flex items-center justify-between shadow-sm z-10 shrink-0">
-            <h1 class="text-xl font-bold flex items-center gap-2 text-gray-800">
+        <header class="bg-white border-b px-6 py-3 flex items-center justify-between shadow-sm z-10 shrink-0">
+            <h1 class="text-lg font-bold flex items-center gap-2 text-gray-800">
                 <i class="fa-solid fa-magnifying-glass-chart text-indigo-600"></i>
                 Super-Res Arena
             </h1>
-            <div class="text-sm text-gray-500 font-medium">
-                图像超分辨率盲测系统
+            <div class="flex items-center gap-4">
+                <span class="text-sm text-gray-500">
+                    进度: {{ currentTaskIndex + 1 }} / {{ tasks.length }}
+                </span>
+                <div class="w-32 bg-gray-200 rounded-full h-2">
+                    <div class="bg-indigo-600 h-2 rounded-full transition-all" :style="{ width: ((currentTaskIndex + 1) / tasks.length * 100) + '%' }"></div>
+                </div>
             </div>
         </header>
 
-        <div class="flex flex-1 overflow-hidden">
-            <!-- Main Content -->
-            <main class="flex-1 bg-gray-50 overflow-y-auto p-6 flex flex-col items-center">
-                
-                <!-- 评测进行中状态 -->
-                <div v-if="!isFinished" class="max-w-6xl w-full bg-white rounded-xl shadow-sm border p-6 flex flex-col gap-6">
-                    
-                    <!-- Progress Bar -->
-                    <div class="flex flex-col gap-2 mb-2">
-                        <div class="flex justify-between items-center text-sm text-gray-500 font-medium">
-                            <span>评测进度</span>
-                            <span>{{ currentTaskIndex + 1 }} / {{ tasks.length }}</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-indigo-600 h-2 rounded-full transition-all duration-500" :style="{ width: ((currentTaskIndex + 1) / tasks.length * 100) + '%' }"></div>
-                        </div>
-                    </div>
+        <!-- Main -->
+        <main class="flex-1 overflow-hidden p-4 bg-gray-100 flex flex-col gap-3">
+            
+            <!-- 退化信息条 -->
+            <div class="bg-white rounded-lg px-5 py-3 shadow-sm border flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <span class="font-bold text-gray-700">测试组 #{{ currentTask.originalId }}</span>
+                    <span class="text-sm text-gray-500"><i class="fa-solid fa-circle-info text-indigo-400 mr-1"></i>{{ currentTask.description }}</span>
+                </div>
+                <div class="text-xs text-gray-400">滚轮缩放 · 拖拽平移 · 三图同步</div>
+            </div>
 
-                    <!-- LR Image Display -->
-                    <div class="bg-gray-100 p-5 rounded-lg flex flex-col md:flex-row items-center gap-6 shadow-inner">
-                        <div class="shrink-0 flex flex-col items-center gap-2">
-                            <span class="text-gray-500 text-xs uppercase tracking-widest font-bold">低分辨率原图 (LR Input)</span>
-                            <div class="w-32 h-32 bg-gray-200 rounded border border-gray-300 overflow-hidden relative group cursor-pointer" @click="openImage(currentTask.lrImage)">
-                                <img :src="currentTask.lrImage" class="w-full h-full object-cover image-pixelated transition-transform group-hover:scale-105" />
-                                <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <i class="fa-solid fa-expand text-white"></i>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex-1 text-center md:text-left">
-                            <h3 class="text-lg font-bold text-gray-800">测试组 #{{ currentTask.originalId }}</h3>
-                            <p class="mt-2 text-sm text-gray-600 bg-white p-3 rounded border inline-block">
-                                <i class="fa-solid fa-circle-info text-indigo-500 mr-1"></i>
-                                <strong>退化类型：</strong>{{ currentTask.description }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Image Comparison -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-2">
-                        <!-- Model A -->
-                        <div class="flex flex-col gap-3">
-                            <div class="text-center font-medium text-gray-600 bg-gray-100 py-3 rounded-lg flex flex-col">
-                                <span class="text-lg">Model A</span>
-                                <span v-if="revealed" class="text-indigo-600 font-bold text-sm mt-1 fade-in">{{ currentTask.displayModelAName }}</span>
-                                <span v-else class="text-gray-400 text-sm mt-1">未知模型</span>
-                            </div>
-                            <div class="aspect-square bg-gray-200 rounded-xl overflow-hidden border flex items-center justify-center relative group shadow-sm">
-                                <img :src="currentTask.displayModelA" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <button @click="openImage(currentTask.displayModelA)" class="text-white bg-white/20 p-3 rounded-full hover:bg-white/40 backdrop-blur-sm transition-colors">
-                                        <i class="fa-solid fa-magnifying-glass-plus text-xl"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Model B -->
-                        <div class="flex flex-col gap-3">
-                            <div class="text-center font-medium text-gray-600 bg-gray-100 py-3 rounded-lg flex flex-col">
-                                <span class="text-lg">Model B</span>
-                                <span v-if="revealed" class="text-indigo-600 font-bold text-sm mt-1 fade-in">{{ currentTask.displayModelBName }}</span>
-                                <span v-else class="text-gray-400 text-sm mt-1">未知模型</span>
-                            </div>
-                            <div class="aspect-square bg-gray-200 rounded-xl overflow-hidden border flex items-center justify-center relative group shadow-sm">
-                                <img :src="currentTask.displayModelB" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <button @click="openImage(currentTask.displayModelB)" class="text-white bg-white/20 p-3 rounded-full hover:bg-white/40 backdrop-blur-sm transition-colors">
-                                        <i class="fa-solid fa-magnifying-glass-plus text-xl"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Voting Buttons -->
-                    <div class="flex flex-wrap justify-center gap-4 mt-6">
-                        <button @click="vote('A')" :disabled="revealed" class="px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors shadow-sm flex items-center gap-2 text-lg">
-                            <i class="fa-solid fa-hand-point-left"></i> Model A 细节更好
-                        </button>
-                        <button @click="vote('B')" :disabled="revealed" class="px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors shadow-sm flex items-center gap-2 text-lg">
-                            Model B 细节更好 <i class="fa-solid fa-hand-point-right"></i>
-                        </button>
-                        <button @click="vote('Tie')" :disabled="revealed" class="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors shadow-sm flex items-center gap-2">
-                            <i class="fa-solid fa-handshake"></i> 平局 / 差不多
-                        </button>
-                        <button @click="vote('BothBad')" :disabled="revealed" class="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors shadow-sm flex items-center gap-2">
-                            <i class="fa-solid fa-thumbs-down"></i> 伪影都很多
-                        </button>
-                    </div>
-
-                    <!-- Result Alert -->
-                    <div v-if="revealed" class="mt-4 p-6 bg-green-50 border border-green-200 rounded-xl text-green-800 text-center flex flex-col items-center gap-4 animate-pulse-once">
-                        <div class="font-bold text-xl flex items-center gap-2">
-                            <i class="fa-solid fa-circle-check"></i> 记录成功！模型身份已揭晓。
-                        </div>
-                        <div class="text-base text-green-700 bg-white px-6 py-3 rounded-lg shadow-sm border border-green-100">
-                            Model A: <strong class="text-black">{{ currentTask.displayModelAName }}</strong> 
-                            <span class="mx-3 text-gray-300">|</span> 
-                            Model B: <strong class="text-black">{{ currentTask.displayModelBName }}</strong>
-                        </div>
-                        <button @click="nextTask" class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold transition-colors mt-2 shadow-sm flex items-center gap-2 text-lg">
-                            {{ currentTaskIndex < tasks.length - 1 ? '进入下一组' : '完成评测' }} <i class="fa-solid fa-arrow-right"></i>
-                        </button>
-                    </div>
-
+            <!-- 三个同步面板 -->
+            <div class="sync-viewer-container">
+                <!-- LR Panel -->
+                <div class="sync-panel" ref="lrPanel" @mousedown="onMouseDown($event, 'lr')" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
+                    <div class="panel-label">LR 原图 (低分辨率)</div>
+                    <img ref="lrImg" :src="currentTask.lrImage" class="lr-pixelated" :style="imgStyle('lr')" @load="onImgLoad('lr')" />
+                    <div class="zoom-info">{{ lrScale.toFixed(1) }}x</div>
                 </div>
 
-                <!-- 评测完成状态 -->
-                <div v-else class="max-w-2xl w-full bg-white rounded-xl shadow-sm border p-12 flex flex-col items-center text-center gap-6 mt-10 fade-in">
-                    <div class="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-4xl mb-2">
-                        <i class="fa-solid fa-check"></i>
+                <!-- Model A Panel -->
+                <div class="sync-panel" ref="modelAPanel" @mousedown="onMouseDown($event, 'a')" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
+                    <div class="panel-label">
+                        Model A <span v-if="revealed" class="text-indigo-300 ml-1">({{ currentTask.displayModelAName }})</span>
+                        <span v-else class="text-gray-400 ml-1">(???)</span>
                     </div>
-                    <h2 class="text-3xl font-bold text-gray-800">评测完成！</h2>
-                    <p class="text-gray-600 text-lg">感谢您参与本次超分辨率模型盲测评测，您的投票数据已记录完毕。</p>
-                    
-                    <div class="w-full bg-gray-50 border rounded-lg p-6 mt-4 text-left">
-                        <h3 class="font-bold text-gray-700 mb-4 border-b pb-2">您的投票记录概要：</h3>
-                        <ul class="space-y-3 text-sm text-gray-600 max-h-60 overflow-y-auto">
-                            <li v-for="(res, idx) in results" :key="idx" class="flex justify-between items-center bg-white p-3 rounded border shadow-sm">
-                                <span>测试组 #{{ res.originalId }}</span>
-                                <span class="font-medium text-indigo-600">
-                                    <span v-if="res.choice === 'A' || res.choice === 'B'">胜出: {{ res.winnerName }}</span>
-                                    <span v-else-if="res.choice === 'Tie'" class="text-gray-500">平局</span>
-                                    <span v-else class="text-red-500">都很差</span>
-                                </span>
-                            </li>
-                        </ul>
-                    </div>
+                    <img ref="modelAImg" :src="currentTask.displayModelA" :style="imgStyle('a')" @load="onImgLoad('a')" />
+                    <div class="zoom-info">{{ modelAScale.toFixed(1) }}x</div>
+                </div>
 
-                    <button @click="restart" class="px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 font-medium transition-colors mt-4">
-                        <i class="fa-solid fa-rotate-right mr-2"></i> 重新开始一轮评测
+                <!-- Model B Panel -->
+                <div class="sync-panel" ref="modelBPanel" @mousedown="onMouseDown($event, 'b')" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
+                    <div class="panel-label">
+                        Model B <span v-if="revealed" class="text-indigo-300 ml-1">({{ currentTask.displayModelBName }})</span>
+                        <span v-else class="text-gray-400 ml-1">(???)</span>
+                    </div>
+                    <img ref="modelBImg" :src="currentTask.displayModelB" :style="imgStyle('b')" @load="onImgLoad('b')" />
+                    <div class="zoom-info">{{ modelBScale.toFixed(1) }}x</div>
+                </div>
+            </div>
+
+            <!-- 投票区 -->
+            <div v-if="!isFinished" class="bg-white rounded-xl shadow-sm border p-4 flex flex-col items-center gap-4">
+                <div class="flex flex-wrap justify-center gap-3">
+                    <button @click="vote('A')" :disabled="revealed" class="px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-hand-point-left"></i> Model A 细节更好
+                    </button>
+                    <button @click="vote('B')" :disabled="revealed" class="px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2">
+                        Model B 细节更好 <i class="fa-solid fa-hand-point-right"></i>
+                    </button>
+                    <button @click="vote('Tie')" :disabled="revealed" class="px-5 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-handshake"></i> 平局
+                    </button>
+                    <button @click="vote('BothBad')" :disabled="revealed" class="px-5 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-thumbs-down"></i> 都很差
                     </button>
                 </div>
 
-            </main>
-        </div>
-        
-        <!-- Fullscreen Image Modal -->
-        <div v-if="modalImage" class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity" @click="modalImage = null">
-            <button class="absolute top-6 right-6 text-white text-3xl hover:text-gray-300 transition-colors" @click="modalImage = null">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <img :src="modalImage" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl" @click.stop />
-        </div>
+                <!-- 揭晓 & 下一题 -->
+                <div v-if="revealed" class="w-full max-w-xl flex flex-col items-center gap-3 fade-in">
+                    <div class="text-green-700 font-bold flex items-center gap-2 bg-green-50 px-6 py-3 rounded-lg border border-green-200">
+                        <i class="fa-solid fa-circle-check"></i> 已记录！Model A = {{ currentTask.displayModelAName }} | Model B = {{ currentTask.displayModelBName }}
+                    </div>
+                    <button @click="nextTask" class="px-8 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold transition-colors flex items-center gap-2">
+                        {{ currentTaskIndex < tasks.length - 1 ? '进入下一组' : '完成全部评测' }} <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 完成页面 -->
+            <div v-else class="bg-white rounded-xl shadow-sm border p-10 flex flex-col items-center text-center gap-5 fade-in">
+                <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-3xl">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800">评测完成！</h2>
+                <p class="text-gray-600">感谢参与，您的投票已记录。</p>
+                <div class="w-full max-w-md bg-gray-50 rounded-lg p-4 text-left">
+                    <h3 class="font-bold text-gray-700 mb-3 text-sm border-b pb-2">投票记录</h3>
+                    <ul class="space-y-2 text-sm max-h-48 overflow-y-auto">
+                        <li v-for="(r, i) in results" :key="i" class="flex justify-between bg-white p-2 rounded border">
+                            <span class="text-gray-600">#{{ r.originalId }}</span>
+                            <span class="font-medium text-indigo-600">
+                                <span v-if="r.choice === 'Tie'">平局</span>
+                                <span v-else-if="r.choice === 'BothBad'" class="text-red-500">都很差</span>
+                                <span v-else>胜出: {{ r.winnerName }}</span>
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+                <button @click="restart" class="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 font-medium">
+                    <i class="fa-solid fa-rotate-right mr-2"></i>重新开始
+                </button>
+            </div>
+
+        </main>
     </div>
 
     <script>
-        const { createApp, ref, computed, onMounted } = Vue;
+        const { createApp, ref, reactive, computed, onMounted } = Vue;
 
-        // 核心原始数据（实际使用时替换为你的数据集）
         const rawDatasets = [
-            {
-                id: 1,
-                description: "Real-world degradation (JPEG compression + blur) 4x upscale",
-                lrImage: "https://picsum.photos/seed/lr1/200/200",
-                modelA: "https://picsum.photos/seed/hr1a/800/800",
-                modelB: "https://picsum.photos/seed/hr1b/800/800",
-                modelAName: "Real-ESRGAN",
-                modelBName: "SwinIR"
-            },
-            {
-                id: 2,
-                description: "Bicubic downsampling 4x + Gaussian Noise",
-                lrImage: "https://picsum.photos/seed/lr2/200/200",
-                modelA: "https://picsum.photos/seed/hr2a/800/800",
-                modelB: "https://picsum.photos/seed/hr2b/800/800",
-                modelAName: "BSRGAN",
-                modelBName: "HAT"
-            },
-            {
-                id: 3,
-                description: "Severe degradation (Blur + Noise + Low Quality) 4x upscale",
-                lrImage: "https://picsum.photos/seed/lr3/200/200",
-                modelA: "https://picsum.photos/seed/hr3a/800/800",
-                modelB: "https://picsum.photos/seed/hr3b/800/800",
-                modelAName: "CodeFormer",
-                modelBName: "GFPGAN"
-            },
-            {
-                id: 4,
-                description: "Unknown complex degradation (Real-world LR image)",
-                lrImage: "https://picsum.photos/seed/lr4/200/200",
-                modelA: "https://picsum.photos/seed/hr4a/800/800",
-                modelB: "https://picsum.photos/seed/hr4b/800/800",
-                modelAName: "StableSR",
-                modelBName: "Real-ESRGAN"
-            }
+            { id: 1, description: "Real-world degradation 4x upscale", lrImage: "https://picsum.photos/seed/lr1/200/200", modelA: "https://picsum.photos/seed/hr1a/800/800", modelB: "https://picsum.photos/seed/hr1b/800/800", modelAName: "Real-ESRGAN", modelBName: "SwinIR" },
+            { id: 2, description: "Bicubic 4x + Gaussian Noise", lrImage: "https://picsum.photos/seed/lr2/200/200", modelA: "https://picsum.photos/seed/hr2a/800/800", modelB: "https://picsum.photos/seed/hr2b/800/800", modelAName: "BSRGAN", modelBName: "HAT" },
+            { id: 3, description: "Severe degradation 4x upscale", lrImage: "https://picsum.photos/seed/lr3/200/200", modelA: "https://picsum.photos/seed/hr3a/800/800", modelB: "https://picsum.photos/seed/hr3b/800/800", modelAName: "CodeFormer", modelBName: "GFPGAN" },
+            { id: 4, description: "Unknown real-world LR", lrImage: "https://picsum.photos/seed/lr4/200/200", modelA: "https://picsum.photos/seed/hr4a/800/800", modelB: "https://picsum.photos/seed/hr4b/800/800", modelAName: "StableSR", modelBName: "Real-ESRGAN" }
         ];
 
-        // Fisher-Yates 洗牌算法
-        const shuffleArray = (array) => {
-            const arr = [...array];
-            for (let i = arr.length - 1; i > 0; i--) {
+        const shuffleArray = (arr) => {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [arr[i], arr[j]] = [arr[j], arr[i]];
+                [a[i], a[j]] = [a[j], a[i]];
             }
-            return arr;
+            return a;
         };
 
         createApp({
@@ -240,29 +234,49 @@
                 const currentTaskIndex = ref(0);
                 const revealed = ref(false);
                 const isFinished = ref(false);
-                const modalImage = ref(null);
                 const results = ref([]);
 
-                // 初始化并打乱测试集
+                // 同步状态
+                const lrScale = ref(1);
+                const modelAScale = ref(1);
+                const modelBScale = ref(1);
+                const lrOffsetX = ref(0);
+                const lrOffsetY = ref(0);
+                const modelAOffsetX = ref(0);
+                const modelAOffsetY = ref(0);
+                const modelBOffsetX = ref(0);
+                const modelBOffsetY = ref(0);
+                const imgNaturalSize = { lr: { w: 200, h: 200 }, a: { w: 800, h: 800 }, b: { w: 800, h: 800 } };
+
+                let isDragging = false;
+                let dragTarget = null;
+                let dragStartX = 0, dragStartY = 0;
+                let dragStartOffsetX = 0, dragStartOffsetY = 0;
+
                 const initTasks = () => {
-                    // 1. 随机打乱测试组的前后顺序
-                    let shuffledData = shuffleArray(rawDatasets);
-                    
-                    // 2. 针对每一组，随机交换 Model A 和 Model B 的位置（真正的盲测）
-                    tasks.value = shuffledData.map(item => {
-                        const swapModels = Math.random() > 0.5; // 50% 概率交换 A 和 B
+                    const shuffled = shuffleArray(rawDatasets);
+                    tasks.value = shuffled.map(item => {
+                        const swapped = Math.random() > 0.5;
                         return {
                             originalId: item.id,
                             description: item.description,
                             lrImage: item.lrImage,
-                            // 展示用的数据（可能被交换）
-                            displayModelA: swapModels ? item.modelB : item.modelA,
-                            displayModelB: swapModels ? item.modelA : item.modelB,
-                            displayModelAName: swapModels ? item.modelBName : item.modelAName,
-                            displayModelBName: swapModels ? item.modelAName : item.modelBName,
-                            isSwapped: swapModels
+                            displayModelA: swapped ? item.modelB : item.modelA,
+                            displayModelB: swapped ? item.modelA : item.modelB,
+                            displayModelAName: swapped ? item.modelBName : item.modelAName,
+                            displayModelBName: swapped ? item.modelAName : item.modelBName,
+                            isSwapped: swapped
                         };
                     });
+                };
+
+                const resetViewer = () => {
+                    lrScale.value = 1;
+                    modelAScale.value = 1;
+                    modelBScale.value = 1;
+                    lrOffsetX.value = 0; lrOffsetY.value = 0;
+                    modelAOffsetX.value = 0; modelAOffsetY.value = 0;
+                    modelBOffsetX.value = 0; modelBOffsetY.value = 0;
                 };
 
                 onMounted(() => {
@@ -271,30 +285,105 @@
 
                 const currentTask = computed(() => tasks.value[currentTaskIndex.value] || {});
 
+                const imgStyle = (panel) => {
+                    if (panel === 'lr') {
+                        return {
+                            transform: `translate(${lrOffsetX.value}px, ${lrOffsetY.value}px) scale(${lrScale.value})`,
+                            width: imgNaturalSize.lr.w + 'px',
+                            height: imgNaturalSize.lr.h + 'px'
+                        };
+                    } else if (panel === 'a') {
+                        return {
+                            transform: `translate(${modelAOffsetX.value}px, ${modelAOffsetY.value}px) scale(${modelAScale.value})`,
+                            width: imgNaturalSize.a.w + 'px',
+                            height: imgNaturalSize.a.h + 'px'
+                        };
+                    } else {
+                        return {
+                            transform: `translate(${modelBOffsetX.value}px, ${modelBOffsetY.value}px) scale(${modelBScale.value})`,
+                            width: imgNaturalSize.b.w + 'px',
+                            height: imgNaturalSize.b.h + 'px'
+                        };
+                    }
+                };
+
+                const onImgLoad = (panel) => {
+                    const img = panel === 'lr' ? document.querySelector('.sync-panel:nth-child(1) img') :
+                                panel === 'a' ? document.querySelector('.sync-panel:nth-child(2) img') :
+                                document.querySelector('.sync-panel:nth-child(3) img');
+                    if (img && img.naturalWidth) {
+                        imgNaturalSize[panel] = { w: img.naturalWidth, h: img.naturalHeight };
+                    }
+                };
+
+                const onWheel = (e) => {
+                    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                    const newScale = Math.min(Math.max(lrScale.value * delta, 0.1), 20);
+                    const factor = newScale / lrScale.value;
+                    lrScale.value = newScale;
+                    modelAScale.value = newScale;
+                    modelBScale.value = newScale;
+                    // Zoom towards mouse position
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left - rect.width / 2;
+                    const mouseY = e.clientY - rect.top - rect.height / 2;
+                    lrOffsetX.value = mouseX - factor * (mouseX - lrOffsetX.value);
+                    lrOffsetY.value = mouseY - factor * (mouseY - lrOffsetY.value);
+                    modelAOffsetX.value = mouseX - factor * (mouseX - modelAOffsetX.value);
+                    modelAOffsetY.value = mouseY - factor * (mouseY - modelAOffsetY.value);
+                    modelBOffsetX.value = mouseX - factor * (mouseX - modelBOffsetX.value);
+                    modelBOffsetY.value = mouseY - factor * (mouseY - modelBOffsetY.value);
+                };
+
+                const onMouseDown = (e, panel) => {
+                    isDragging = true;
+                    dragTarget = panel;
+                    dragStartX = e.clientX;
+                    dragStartY = e.clientY;
+                    if (panel === 'lr') {
+                        dragStartOffsetX = lrOffsetX.value;
+                        dragStartOffsetY = lrOffsetY.value;
+                    } else if (panel === 'a') {
+                        dragStartOffsetX = modelAOffsetX.value;
+                        dragStartOffsetY = modelAOffsetY.value;
+                    } else {
+                        dragStartOffsetX = modelBOffsetX.value;
+                        dragStartOffsetY = modelBOffsetY.value;
+                    }
+                };
+
+                const onMouseMove = (e) => {
+                    if (!isDragging) return;
+                    const dx = e.clientX - dragStartX;
+                    const dy = e.clientY - dragStartY;
+                    lrOffsetX.value = dragStartOffsetX + dx;
+                    lrOffsetY.value = dragStartOffsetY + dy;
+                    modelAOffsetX.value = dragStartOffsetX + dx;
+                    modelAOffsetY.value = dragStartOffsetY + dy;
+                    modelBOffsetX.value = dragStartOffsetX + dx;
+                    modelBOffsetY.value = dragStartOffsetY + dy;
+                };
+
+                const onMouseUp = () => {
+                    isDragging = false;
+                    dragTarget = null;
+                };
+
                 const vote = (choice) => {
                     revealed.value = true;
-                    
-                    // 记录结果
                     let winnerName = null;
                     if (choice === 'A') winnerName = currentTask.value.displayModelAName;
                     if (choice === 'B') winnerName = currentTask.value.displayModelBName;
-
-                    results.value.push({
-                        originalId: currentTask.value.originalId,
-                        choice: choice,
-                        winnerName: winnerName
-                    });
+                    results.value.push({ originalId: currentTask.value.originalId, choice, winnerName });
                 };
 
                 const nextTask = () => {
                     if (currentTaskIndex.value < tasks.value.length - 1) {
                         currentTaskIndex.value++;
                         revealed.value = false;
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        resetViewer();
                     } else {
-                        // 评测结束
                         isFinished.value = true;
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
                 };
 
@@ -303,26 +392,14 @@
                     currentTaskIndex.value = 0;
                     revealed.value = false;
                     isFinished.value = false;
-                    initTasks(); // 重新洗牌
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                };
-
-                const openImage = (url) => {
-                    modalImage.value = url;
+                    resetViewer();
+                    initTasks();
                 };
 
                 return {
-                    tasks,
-                    currentTaskIndex,
-                    currentTask,
-                    revealed,
-                    isFinished,
-                    modalImage,
-                    results,
-                    vote,
-                    nextTask,
-                    restart,
-                    openImage
+                    tasks, currentTaskIndex, currentTask, revealed, isFinished, results,
+                    lrScale, modelAScale, modelBScale, imgStyle, onImgLoad, onWheel,
+                    onMouseDown, onMouseMove, onMouseUp, vote, nextTask, restart
                 };
             }
         }).mount('#app');
