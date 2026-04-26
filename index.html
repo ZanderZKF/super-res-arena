@@ -369,12 +369,11 @@
                     submitSuccess.value = false;
                     submitError.value = false;
 
+                    // 使用跨域代理解决飞书 Webhook 的 CORS 拦截问题
                     const webhookUrl = 'https://nankai.feishu.cn/base/automation/webhook/event/L3lIafnaEw3BkThLPb2cogWyn5g';
+                    const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(webhookUrl);
                     
                     try {
-                        // 构建要发送的数据
-                        // 飞书 Webhook 接收的数据结构可以根据你实际创建的表结构来调整
-                        // 这里我们把每一条投票记录和整体的时间打包发送
                         const payload = {
                             timestamp: new Date().toISOString(),
                             totalTasks: tasks.value.length,
@@ -387,10 +386,11 @@
                             }))
                         };
 
-                        const response = await fetch(webhookUrl, {
+                        const response = await fetch(proxyUrl, {
                             method: 'POST',
                             headers: {
-                                'Content-Type': 'application/json'
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
                             },
                             body: JSON.stringify(payload)
                         });
