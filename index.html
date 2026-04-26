@@ -214,7 +214,7 @@
                     <i class="fa-solid fa-spinner fa-spin mr-1"></i> 正在将结果上传至飞书多维表格...
                 </div>
                 <div v-else-if="submitSuccess" class="text-sm text-green-600 font-medium">
-                    <i class="fa-solid fa-cloud-arrow-up mr-1"></i> 结果已成功上传至飞书
+                    <i class="fa-solid fa-cloud-arrow-up mr-1"></i> 请求已发送至飞书（直连模式）
                 </div>
                 <div v-else-if="submitError" class="text-sm text-red-500 font-medium">
                     <i class="fa-solid fa-triangle-exclamation mr-1"></i> 上传飞书失败，请检查网络或 Webhook 配置
@@ -369,10 +369,9 @@
                     submitSuccess.value = false;
                     submitError.value = false;
 
-                    // 使用 api.allorigins.win 代理来解决 CORS 问题
-                    // 由于 corsproxy.io 有时会把 POST 请求拦截或者导致 400，我们换用另一个稳定的方案
+                    // 采用前端直连飞书的 no-cors 盲发模式
+                    // 完全不依赖任何第三方代理，直接发给飞书
                     const webhookUrl = 'https://nankai.feishu.cn/base/automation/webhook/event/L3lIafnaEw3BkThLPb2cogWyn5g';
-                    const proxyUrl = 'https://thingproxy.freeboard.io/fetch/' + webhookUrl;
                     
                     try {
                         const payload = {
@@ -387,21 +386,19 @@
                             }))
                         };
 
-                        const response = await fetch(proxyUrl, {
+                        // 使用 mode: 'no-cors' 强制发送请求，并伪装成 text/plain
+                        // 注意：这种模式下 response 是不透明的，我们无法读取飞书返回的真实状态
+                        const response = await fetch(webhookUrl, {
                             method: 'POST',
+                            mode: 'no-cors',
                             headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json'
+                                'Content-Type': 'text/plain', // 必须是这个才能绕过预检
                             },
                             body: JSON.stringify(payload)
                         });
 
-                        if (response.ok) {
-                            submitSuccess.value = true;
-                        } else {
-                            submitError.value = true;
-                            console.error('Feishu Webhook Error:', response.statusText);
-                        }
+                        // 因为是盲发，只要没抛出网络异常，我们就假设发送成功了
+                        submitSuccess.value = true;
                     } catch (error) {
                         submitError.value = true;
                         console.error('Feishu Webhook Request Failed:', error);
