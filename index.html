@@ -369,9 +369,10 @@
                     submitSuccess.value = false;
                     submitError.value = false;
 
-                    // 使用跨域代理解决飞书 Webhook 的 CORS 拦截问题
+                    // 使用 api.allorigins.win 代理来解决 CORS 问题
+                    // 由于 corsproxy.io 有时会把 POST 请求拦截或者导致 400，我们换用另一个稳定的方案
                     const webhookUrl = 'https://nankai.feishu.cn/base/automation/webhook/event/L3lIafnaEw3BkThLPb2cogWyn5g';
-                    const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(webhookUrl);
+                    const proxyUrl = 'https://thingproxy.freeboard.io/fetch/' + webhookUrl;
                     
                     try {
                         const payload = {
