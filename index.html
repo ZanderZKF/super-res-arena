@@ -27,10 +27,17 @@
         }
         .sync-panel:active { cursor: grabbing; }
         .sync-panel img {
-            position: absolute;
-            transform-origin: 0 0;
             pointer-events: none;
             image-rendering: auto;
+        }
+        .img-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            will-change: transform;
         }
         .panel-label {
             position: absolute;
@@ -126,30 +133,36 @@
             <!-- 三个同步面板 -->
             <div class="sync-viewer-container">
                 <!-- LR Panel -->
-                <div class="sync-panel" ref="lrPanel" @mousedown="onMouseDown($event, 'lr')" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
+                <div class="sync-panel" ref="lrPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
                     <div class="panel-label">LR 原图 (低分辨率)</div>
-                    <img ref="lrImg" :src="currentTask.lrImage" class="lr-pixelated" :style="imgStyle('lr')" @load="onImgLoad('lr')" />
-                    <div class="zoom-info">{{ lrScale.toFixed(1) }}x</div>
+                    <div class="img-wrapper" :style="wrapperStyle">
+                        <img ref="lrImg" :src="currentTask.lrImage" class="lr-pixelated" @load="onImgLoad('lr')" />
+                    </div>
+                    <div class="zoom-info">{{ globalScale.toFixed(1) }}x</div>
                 </div>
 
                 <!-- Model A Panel -->
-                <div class="sync-panel" ref="modelAPanel" @mousedown="onMouseDown($event, 'a')" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
+                <div class="sync-panel" ref="modelAPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
                     <div class="panel-label">
                         Model A <span v-if="revealed" class="text-indigo-300 ml-1">({{ currentTask.displayModelAName }})</span>
                         <span v-else class="text-gray-400 ml-1">(???)</span>
                     </div>
-                    <img ref="modelAImg" :src="currentTask.displayModelA" :style="imgStyle('a')" @load="onImgLoad('a')" />
-                    <div class="zoom-info">{{ modelAScale.toFixed(1) }}x</div>
+                    <div class="img-wrapper" :style="wrapperStyle">
+                        <img ref="modelAImg" :src="currentTask.displayModelA" @load="onImgLoad('a')" />
+                    </div>
+                    <div class="zoom-info">{{ globalScale.toFixed(1) }}x</div>
                 </div>
 
                 <!-- Model B Panel -->
-                <div class="sync-panel" ref="modelBPanel" @mousedown="onMouseDown($event, 'b')" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
+                <div class="sync-panel" ref="modelBPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
                     <div class="panel-label">
                         Model B <span v-if="revealed" class="text-indigo-300 ml-1">({{ currentTask.displayModelBName }})</span>
                         <span v-else class="text-gray-400 ml-1">(???)</span>
                     </div>
-                    <img ref="modelBImg" :src="currentTask.displayModelB" :style="imgStyle('b')" @load="onImgLoad('b')" />
-                    <div class="zoom-info">{{ modelBScale.toFixed(1) }}x</div>
+                    <div class="img-wrapper" :style="wrapperStyle">
+                        <img ref="modelBImg" :src="currentTask.displayModelB" @load="onImgLoad('b')" />
+                    </div>
+                    <div class="zoom-info">{{ globalScale.toFixed(1) }}x</div>
                 </div>
             </div>
 
@@ -237,19 +250,12 @@
                 const results = ref([]);
 
                 // 同步状态
-                const lrScale = ref(1);
-                const modelAScale = ref(1);
-                const modelBScale = ref(1);
-                const lrOffsetX = ref(0);
-                const lrOffsetY = ref(0);
-                const modelAOffsetX = ref(0);
-                const modelAOffsetY = ref(0);
-                const modelBOffsetX = ref(0);
-                const modelBOffsetY = ref(0);
+                const globalScale = ref(1);
+                const globalOffsetX = ref(0);
+                const globalOffsetY = ref(0);
                 const imgNaturalSize = { lr: { w: 200, h: 200 }, a: { w: 800, h: 800 }, b: { w: 800, h: 800 } };
 
                 let isDragging = false;
-                let dragTarget = null;
                 let dragStartX = 0, dragStartY = 0;
                 let dragStartOffsetX = 0, dragStartOffsetY = 0;
 
@@ -271,12 +277,9 @@
                 };
 
                 const resetViewer = () => {
-                    lrScale.value = 1;
-                    modelAScale.value = 1;
-                    modelBScale.value = 1;
-                    lrOffsetX.value = 0; lrOffsetY.value = 0;
-                    modelAOffsetX.value = 0; modelAOffsetY.value = 0;
-                    modelBOffsetX.value = 0; modelBOffsetY.value = 0;
+                    globalScale.value = 1;
+                    globalOffsetX.value = 0;
+                    globalOffsetY.value = 0;
                 };
 
                 onMounted(() => {
@@ -285,27 +288,9 @@
 
                 const currentTask = computed(() => tasks.value[currentTaskIndex.value] || {});
 
-                const imgStyle = (panel) => {
-                    if (panel === 'lr') {
-                        return {
-                            transform: `translate(${lrOffsetX.value}px, ${lrOffsetY.value}px) scale(${lrScale.value})`,
-                            width: imgNaturalSize.lr.w + 'px',
-                            height: imgNaturalSize.lr.h + 'px'
-                        };
-                    } else if (panel === 'a') {
-                        return {
-                            transform: `translate(${modelAOffsetX.value}px, ${modelAOffsetY.value}px) scale(${modelAScale.value})`,
-                            width: imgNaturalSize.a.w + 'px',
-                            height: imgNaturalSize.a.h + 'px'
-                        };
-                    } else {
-                        return {
-                            transform: `translate(${modelBOffsetX.value}px, ${modelBOffsetY.value}px) scale(${modelBScale.value})`,
-                            width: imgNaturalSize.b.w + 'px',
-                            height: imgNaturalSize.b.h + 'px'
-                        };
-                    }
-                };
+                const wrapperStyle = computed(() => ({
+                    transform: `translate(${globalOffsetX.value}px, ${globalOffsetY.value}px) scale(${globalScale.value})`
+                }));
 
                 const onImgLoad = (panel) => {
                     const img = panel === 'lr' ? document.querySelector('.sync-panel:nth-child(1) img') :
@@ -317,56 +302,36 @@
                 };
 
                 const onWheel = (e) => {
-                    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-                    const newScale = Math.min(Math.max(lrScale.value * delta, 0.1), 20);
-                    const factor = newScale / lrScale.value;
-                    lrScale.value = newScale;
-                    modelAScale.value = newScale;
-                    modelBScale.value = newScale;
-                    // Zoom towards mouse position
+                    const delta = e.deltaY > 0 ? 0.85 : 1.15;
+                    const oldScale = globalScale.value;
+                    const newScale = Math.min(Math.max(oldScale * delta, 0.1), 30);
+                    const factor = newScale / oldScale;
+
                     const rect = e.currentTarget.getBoundingClientRect();
                     const mouseX = e.clientX - rect.left - rect.width / 2;
                     const mouseY = e.clientY - rect.top - rect.height / 2;
-                    lrOffsetX.value = mouseX - factor * (mouseX - lrOffsetX.value);
-                    lrOffsetY.value = mouseY - factor * (mouseY - lrOffsetY.value);
-                    modelAOffsetX.value = mouseX - factor * (mouseX - modelAOffsetX.value);
-                    modelAOffsetY.value = mouseY - factor * (mouseY - modelAOffsetY.value);
-                    modelBOffsetX.value = mouseX - factor * (mouseX - modelBOffsetX.value);
-                    modelBOffsetY.value = mouseY - factor * (mouseY - modelBOffsetY.value);
+
+                    globalOffsetX.value = mouseX - factor * (mouseX - globalOffsetX.value);
+                    globalOffsetY.value = mouseY - factor * (mouseY - globalOffsetY.value);
+                    globalScale.value = newScale;
                 };
 
-                const onMouseDown = (e, panel) => {
+                const onMouseDown = (e) => {
                     isDragging = true;
-                    dragTarget = panel;
                     dragStartX = e.clientX;
                     dragStartY = e.clientY;
-                    if (panel === 'lr') {
-                        dragStartOffsetX = lrOffsetX.value;
-                        dragStartOffsetY = lrOffsetY.value;
-                    } else if (panel === 'a') {
-                        dragStartOffsetX = modelAOffsetX.value;
-                        dragStartOffsetY = modelAOffsetY.value;
-                    } else {
-                        dragStartOffsetX = modelBOffsetX.value;
-                        dragStartOffsetY = modelBOffsetY.value;
-                    }
+                    dragStartOffsetX = globalOffsetX.value;
+                    dragStartOffsetY = globalOffsetY.value;
                 };
 
                 const onMouseMove = (e) => {
                     if (!isDragging) return;
-                    const dx = e.clientX - dragStartX;
-                    const dy = e.clientY - dragStartY;
-                    lrOffsetX.value = dragStartOffsetX + dx;
-                    lrOffsetY.value = dragStartOffsetY + dy;
-                    modelAOffsetX.value = dragStartOffsetX + dx;
-                    modelAOffsetY.value = dragStartOffsetY + dy;
-                    modelBOffsetX.value = dragStartOffsetX + dx;
-                    modelBOffsetY.value = dragStartOffsetY + dy;
+                    globalOffsetX.value = dragStartOffsetX + (e.clientX - dragStartX);
+                    globalOffsetY.value = dragStartOffsetY + (e.clientY - dragStartY);
                 };
 
                 const onMouseUp = () => {
                     isDragging = false;
-                    dragTarget = null;
                 };
 
                 const vote = (choice) => {
@@ -398,7 +363,7 @@
 
                 return {
                     tasks, currentTaskIndex, currentTask, revealed, isFinished, results,
-                    lrScale, modelAScale, modelBScale, imgStyle, onImgLoad, onWheel,
+                    globalScale, wrapperStyle, onImgLoad, onWheel,
                     onMouseDown, onMouseMove, onMouseUp, vote, nextTask, restart
                 };
             }
