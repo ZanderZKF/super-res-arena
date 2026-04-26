@@ -94,7 +94,15 @@
             from { opacity: 0; transform: translateY(-5px); }
             to { opacity: 1; transform: translateY(0); }
         }
-    </style>
+    /* 简单的提示框上浮动画 */
+            .animate-fade-in-up {
+                animation: fadeInUp 0.3s ease-out forwards;
+            }
+            @keyframes fadeInUp {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
     <div id="app" v-cloak class="h-screen flex flex-col">
@@ -104,12 +112,16 @@
                 <i class="fa-solid fa-magnifying-glass-chart text-indigo-600"></i>
                 Super-Res Arena
             </h1>
-            <div class="flex items-center gap-4">
-                <span class="text-sm text-gray-500">
-                    进度: {{ currentTaskIndex + 1 }} / {{ tasks.length }}
+            <div class="flex items-center space-x-2 text-sm font-medium text-gray-600">
+                <span>评测进度:</span>
+                <span :class="{'text-green-600 font-bold': completedCount >= targetTaskCount}">
+                    {{ completedCount }} / {{ targetTaskCount }}+
                 </span>
-                <div class="w-32 bg-gray-200 rounded-full h-2">
-                    <div class="bg-indigo-600 h-2 rounded-full transition-all" :style="{ width: ((currentTaskIndex + 1) / tasks.length * 100) + '%' }"></div>
+                <div class="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div class="h-full transition-all duration-300"
+                        :class="completedCount >= targetTaskCount ? 'bg-green-500' : 'bg-indigo-600'"
+                        :style="{ width: Math.min(100, (completedCount / targetTaskCount) * 100) + '%' }">
+                    </div>
                 </div>
             </div>
         </header>
@@ -161,8 +173,8 @@
                 </div>
             </div>
 
-            <!-- 投票区 -->
-            <div v-if="!isFinished" class="bg-white rounded-xl shadow-sm border p-4 flex flex-col items-center gap-4">
+            <!-- 主内容区 -->
+            <div v-if="!isFinished" class="bg-white rounded-xl shadow-sm border p-4 flex flex-col items-center gap-4 relative">
                 <div class="flex flex-wrap justify-center gap-3">
                     <button @click="vote('A')" :disabled="revealed" class="px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2">
                         <i class="fa-solid fa-hand-point-left"></i> Model A 细节更好
@@ -184,45 +196,21 @@
                         <i class="fa-solid fa-circle-check"></i> 已记录！Model A = {{ currentTask.displayModelAName }} | Model B = {{ currentTask.displayModelBName }}
                     </div>
                     <button @click="nextTask" class="px-8 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold transition-colors flex items-center gap-2">
-                        {{ currentTaskIndex < tasks.length - 1 ? '进入下一组' : '完成全部评测' }} <i class="fa-solid fa-arrow-right"></i>
+                        <span>{{ completedCount < targetTaskCount ? '下一组' : '继续评测 (已达标，感谢支持)' }}</span> <i class="fa-solid fa-arrow-right"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- 完成页面 -->
-            <div v-else class="bg-white rounded-xl shadow-sm border p-10 flex flex-col items-center text-center gap-5 fade-in">
-                <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-3xl">
-                    <i class="fa-solid fa-check"></i>
-                </div>
-                <h2 class="text-2xl font-bold text-gray-800">评测完成！</h2>
-                <p class="text-gray-600">感谢参与，您的投票已记录。</p>
-                <div class="w-full max-w-md bg-gray-50 rounded-lg p-4 text-left">
-                    <h3 class="font-bold text-gray-700 mb-3 text-sm border-b pb-2">投票记录</h3>
-                    <ul class="space-y-2 text-sm max-h-48 overflow-y-auto">
-                        <li v-for="(r, i) in results" :key="i" class="flex justify-between bg-white p-2 rounded border">
-                            <span class="text-gray-600">#{{ r.originalId }}</span>
-                            <span class="font-medium text-indigo-600">
-                                <span v-if="r.choice === 'Tie'">平局</span>
-                                <span v-else-if="r.choice === 'BothBad'" class="text-red-500">都很差</span>
-                                <span v-else>胜出: {{ r.winnerName }}</span>
-                            </span>
-                        </li>
-                    </ul>
-                </div>
-                
-                <div v-if="isSubmitting" class="text-sm text-blue-600 font-medium animate-pulse">
-                    <i class="fa-solid fa-spinner fa-spin mr-1"></i> 正在将结果上传至飞书多维表格...
-                </div>
-                <div v-else-if="submitSuccess" class="text-sm text-green-600 font-medium">
-                    <i class="fa-solid fa-cloud-arrow-up mr-1"></i> 请求已发送至飞书（直连模式）
-                </div>
-                <div v-else-if="submitError" class="text-sm text-red-500 font-medium">
-                    <i class="fa-solid fa-triangle-exclamation mr-1"></i> 上传飞书失败，请检查网络或 Webhook 配置
-                </div>
+            <!-- 右下角悬浮提示 -->
+            <div v-if="submitSuccess" class="fixed bottom-4 right-4 bg-green-100 text-green-700 px-4 py-2 rounded shadow-lg text-sm font-bold flex items-center animate-fade-in-up">
+                <i class="fa-solid fa-cloud-arrow-up mr-2"></i> 投票已自动同步
+            </div>
 
-                <button @click="restart" class="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 font-medium">
-                    <i class="fa-solid fa-rotate-right mr-2"></i>重新开始
-                </button>
+            <!-- 完成页面 -->
+            <div v-else class="flex flex-col items-center justify-center min-h-screen p-4 text-center">
+                <!-- 这里可以暂时留空，因为无限模式下很难走到这里，除非题库耗尽且不重复出题 -->
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">评测全部完成！</h2>
+                <p class="text-gray-600 mb-8">您已评测完所有的照片组，感谢您的参与。</p>
             </div>
 
         </main>
@@ -249,6 +237,14 @@
 
         createApp({
             setup() {
+                // 用于追踪当前会话的唯一ID，区分不同用户的评测轮次
+                const sessionId = ref(Math.random().toString(36).substring(2, 10) + Date.now().toString(36));
+                
+                // 目标评测组数
+                const targetTaskCount = 30;
+                // 已经完成的评测组数
+                const completedCount = ref(0);
+
                 const tasks = ref([]);
                 const currentTaskIndex = ref(0);
                 const revealed = ref(false);
@@ -264,9 +260,17 @@
                 let dragStartX = 0, dragStartY = 0;
                 let dragStartOffsetX = 0, dragStartOffsetY = 0;
 
-                const initTasks = () => {
-                    const shuffled = shuffleArray(rawDatasets);
-                    tasks.value = shuffled.map(item => {
+                // 产生一个随机洗牌且A/B盲测互换顺序的题库队列
+                const generateQueue = () => {
+                    // 这里为了能评测超过题库数量，允许重复出题，如果真实题库大于30，就不需要扩展了。
+                    // 此处通过多拼几次来生成至少大于30组的随机序列。
+                    let extendedPool = [];
+                    for(let i=0; i<10; i++) {
+                        extendedPool = extendedPool.concat(JSON.parse(JSON.stringify(rawDatasets)));
+                    }
+
+                    const shuffled = shuffleArray(extendedPool);
+                    return shuffled.map(item => {
                         const swapped = Math.random() > 0.5;
                         return {
                             originalId: item.id,
@@ -279,6 +283,10 @@
                             isSwapped: swapped
                         };
                     });
+                };
+
+                const initTasks = () => {
+                    tasks.value = generateQueue();
                 };
 
                 const resetViewer = () => {
@@ -341,68 +349,75 @@
                     isDragging = false;
                 };
 
-                const vote = (choice) => {
+                const vote = async (choice) => {
+                    if (revealed.value) return;
                     revealed.value = true;
-                    let winnerName = null;
-                    if (choice === 'A') winnerName = currentTask.value.displayModelAName;
-                    if (choice === 'B') winnerName = currentTask.value.displayModelBName;
-                    results.value.push({ originalId: currentTask.value.originalId, choice, winnerName });
-                };
+                    
+                    // 记录结果 (存入本地数组)
+                    const winnerName = choice === 'A' ? currentTask.value.displayModelAName :
+                                       choice === 'B' ? currentTask.value.displayModelBName : null;
+                    
+                    const record = {
+                        originalId: currentTask.value.originalId,
+                        choice: choice,
+                        winnerName: winnerName
+                    };
+                    results.value.push(record);
+                    
+                    // 进度 +1
+                    completedCount.value++;
 
-                const nextTask = () => {
-                    if (currentTaskIndex.value < tasks.value.length - 1) {
-                        currentTaskIndex.value++;
-                        revealed.value = false;
-                        resetViewer();
-                    } else {
-                        isFinished.value = true;
-                        submitResultsToFeishu();
-                    }
+                    // 每投完一票，立刻把这条结果发给飞书
+                    submitSingleVoteToFeishu(record);
                 };
 
                 const isSubmitting = ref(false);
                 const submitSuccess = ref(false);
                 const submitError = ref(false);
 
-                const submitResultsToFeishu = async () => {
-                    isSubmitting.value = true;
-                    submitSuccess.value = false;
-                    submitError.value = false;
-
-                    // 采用前端直连飞书的 no-cors 盲发模式
-                    // 完全不依赖任何第三方代理，直接发给飞书
+                // 发送单条数据到飞书 Webhook
+                const submitSingleVoteToFeishu = async (r) => {
                     const webhookUrl = 'https://nankai.feishu.cn/base/automation/webhook/event/L3lIafnaEw3BkThLPb2cogWyn5g';
                     
                     try {
-                        // 逐条发送每一项评测结果，方便飞书多维表格直接映射插入
-                        for (const r of results.value) {
-                            const taskInfo = tasks.value.find(t => t.originalId === r.originalId);
-                            const payload = {
-                                timestamp: new Date().toISOString(),
-                                task_id: r.originalId,
-                                choice: r.choice,
-                                winner: r.winnerName || '无',
-                                modelA: taskInfo.displayModelAName,
-                                modelB: taskInfo.displayModelBName
-                            };
+                        const taskInfo = tasks.value.find(t => t.originalId === r.originalId);
+                        const payload = {
+                            session_id: sessionId.value, // 用于标识这是同一个用户的连续评测
+                            timestamp: new Date().toISOString(),
+                            task_id: r.originalId,
+                            choice: r.choice,
+                            winner: r.winnerName || '无',
+                            modelA: taskInfo.displayModelAName,
+                            modelB: taskInfo.displayModelBName
+                        };
 
-                            await fetch(webhookUrl, {
-                                method: 'POST',
-                                mode: 'no-cors',
-                                headers: {
-                                    'Content-Type': 'text/plain',
-                                },
-                                body: JSON.stringify(payload)
-                            });
-                        }
+                        await fetch(webhookUrl, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: {
+                                'Content-Type': 'text/plain',
+                            },
+                            body: JSON.stringify(payload)
+                        });
 
-                        // 全部盲发完毕
                         submitSuccess.value = true;
+                        // 为了避免提示一直亮着，几秒后可以清除状态（可选）
+                        setTimeout(() => submitSuccess.value = false, 3000);
                     } catch (error) {
                         submitError.value = true;
-                        console.error('Feishu Webhook Request Failed:', error);
-                    } finally {
-                        isSubmitting.value = false;
+                        console.error('Webhook Request Failed:', error);
+                    }
+                };
+
+                const nextTask = () => {
+                    // 无限模式：只要点下一组，就继续往后走
+                    currentTaskIndex.value++;
+                    revealed.value = false;
+                    resetViewer();
+                    
+                    // 如果题库快见底了，再动态生成一批接在后面，实现真正的无限流
+                    if (currentTaskIndex.value > tasks.value.length - 5) {
+                        tasks.value = tasks.value.concat(generateQueue());
                     }
                 };
 
@@ -419,6 +434,7 @@
 
                 return {
                     tasks, currentTaskIndex, currentTask, revealed, isFinished, results,
+                    completedCount, targetTaskCount,
                     isSubmitting, submitSuccess, submitError,
                     globalScale, wrapperStyle, onImgLoad, onWheel,
                     onMouseDown, onMouseMove, onMouseUp, vote, nextTask, restart
