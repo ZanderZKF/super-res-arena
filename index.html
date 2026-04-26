@@ -10,11 +10,18 @@
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         [v-cloak] { display: none; }
+        /* 主体内容最大宽度，让图片能充分展开 */
+        .main-content {
+            max-width: 1800px;
+            margin: 0 auto;
+            width: 100%;
+        }
         .sync-viewer-container {
             display: flex;
             gap: 12px;
             height: calc(100vh - 220px);
             overflow: hidden;
+            width: 100%;
         }
         .sync-panel {
             flex: 1;
@@ -129,6 +136,8 @@
         <!-- Main -->
         <main class="flex-1 overflow-hidden p-4 bg-gray-100 flex flex-col gap-3">
             
+            <template v-if="currentTask && currentTask.originalId">
+                <div class="main-content flex flex-col gap-3 h-full">
             <!-- 退化信息条 -->
             <div class="bg-white rounded-lg px-5 py-3 shadow-sm border flex items-center justify-between">
                 <div class="flex items-center gap-4">
@@ -139,7 +148,7 @@
             </div>
 
             <!-- 三个同步面板 -->
-            <div class="sync-viewer-container">
+            <div class="sync-viewer-container w-full">
                 <!-- LR Panel -->
                 <div class="sync-panel" ref="lrPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
                     <div class="panel-label">LR 原图 (低分辨率)</div>
@@ -174,7 +183,7 @@
             </div>
 
             <!-- 主内容区 -->
-            <div v-if="!isFinished" class="bg-white rounded-xl shadow-sm border p-4 flex flex-col items-center gap-4 relative">
+            <div class="bg-white rounded-xl shadow-sm border p-4 flex flex-col items-center gap-4 relative w-full shrink-0">
                 <div class="flex flex-wrap justify-center gap-3">
                     <button @click="vote('A')" :disabled="revealed" class="px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2">
                         <i class="fa-solid fa-hand-point-left"></i> Model A 细节更好
@@ -201,16 +210,19 @@
                 </div>
             </div>
 
-            <!-- 右下角悬浮提示 -->
-            <div v-if="submitSuccess" class="fixed bottom-4 right-4 bg-green-100 text-green-700 px-4 py-2 rounded shadow-lg text-sm font-bold flex items-center animate-fade-in-up">
-                <i class="fa-solid fa-cloud-arrow-up mr-2"></i> 投票已自动同步
             </div>
+            </template>
 
             <!-- 完成页面 -->
             <div v-else class="flex flex-col items-center justify-center min-h-screen p-4 text-center">
                 <!-- 这里可以暂时留空，因为无限模式下很难走到这里，除非题库耗尽且不重复出题 -->
                 <h2 class="text-3xl font-bold text-gray-800 mb-2">评测全部完成！</h2>
                 <p class="text-gray-600 mb-8">您已评测完所有的照片组，感谢您的参与。</p>
+            </div>
+
+            <!-- 右下角悬浮提示 -->
+            <div v-if="submitSuccess" class="fixed bottom-4 right-4 bg-green-100 text-green-700 px-4 py-2 rounded shadow-lg text-sm font-bold flex items-center animate-fade-in-up">
+                <i class="fa-solid fa-cloud-arrow-up mr-2"></i> 投票已自动同步
             </div>
 
         </main>
