@@ -370,7 +370,10 @@
                     const record = {
                         originalId: currentTask.value.originalId,
                         choice: choice,
-                        winnerName: winnerName
+                        winnerName: winnerName,
+                        // 顺便把这一题的 AB 是谁记录下来，防止无限循环题库时找错
+                        modelA: currentTask.value.displayModelAName,
+                        modelB: currentTask.value.displayModelBName
                     };
                     results.value.push(record);
                     
@@ -395,15 +398,14 @@
                     const webhookUrl = 'https://nankai.feishu.cn/base/automation/webhook/event/L3lIafnaEw3BkThLPb2cogWyn5g';
                     
                     try {
-                        const taskInfo = tasks.value.find(t => t.originalId === r.originalId);
                         const payload = {
                             session_id: sessionId.value, // 用于标识这是同一个用户的连续评测
                             timestamp: new Date().toISOString(),
                             task_id: r.originalId,
                             choice: r.choice,
                             winner: r.winnerName || '无',
-                            modelA: taskInfo.displayModelAName,
-                            modelB: taskInfo.displayModelBName
+                            modelA: r.modelA,
+                            modelB: r.modelB
                         };
 
                         await fetch(webhookUrl, {
