@@ -482,6 +482,7 @@
                         const payload = {
                             session_id: sessionId.value, // 用于标识这是同一个用户的连续评测
                             timestamp: new Date().toISOString(),
+                            image_name: r.originalId, // 明确加上测试的图片名称，如 Canon_001_LR4
                             task_id: r.originalId,
                             choice: r.choice,
                             winner: r.winnerName || '无',
