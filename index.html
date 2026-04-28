@@ -226,15 +226,31 @@
         </main>
     </div>
 
+    <script src="./arena-files.js"></script>
     <script>
         const { createApp, ref, computed, onMounted } = Vue;
 
-        const rawDatasets = [
-            { id: 1, description: "Real-world degradation 4x upscale", lrImage: "https://picsum.photos/seed/lr1/800/800", modelA: "https://picsum.photos/seed/hr1a/800/800", modelB: "https://picsum.photos/seed/hr1b/800/800", modelAName: "Real-ESRGAN", modelBName: "SwinIR" },
-            { id: 2, description: "Bicubic 4x + Gaussian Noise", lrImage: "https://picsum.photos/seed/lr2/800/800", modelA: "https://picsum.photos/seed/hr2a/800/800", modelB: "https://picsum.photos/seed/hr2b/800/800", modelAName: "BSRGAN", modelBName: "HAT" },
-            { id: 3, description: "Severe degradation 4x upscale", lrImage: "https://picsum.photos/seed/lr3/800/800", modelA: "https://picsum.photos/seed/hr3a/800/800", modelB: "https://picsum.photos/seed/hr3b/800/800", modelAName: "CodeFormer", modelBName: "GFPGAN" },
-            { id: 4, description: "Unknown real-world LR", lrImage: "https://picsum.photos/seed/lr4/800/800", modelA: "https://picsum.photos/seed/hr4a/800/800", modelB: "https://picsum.photos/seed/hr4b/800/800", modelAName: "StableSR", modelBName: "Real-ESRGAN" }
-        ];
+        const localFiles = Array.isArray(window.ARENA_FILES) ? window.ARENA_FILES : [];
+        const rawDatasets = localFiles.length > 0
+            ? localFiles.map((filename, index) => {
+                const basename = filename.replace(/\.[^.]+$/, '');
+                return {
+                    id: index + 1,
+                    originalId: basename,
+                    description: basename,
+                    lrImage: `./RealSRVal_crop128/test_LR_bicubic_512/${filename}`,
+                    modelA: `./flux2-4B/${filename}`,
+                    modelB: `./SD3/${filename}`,
+                    modelAName: 'flux2-4B',
+                    modelBName: 'SD3'
+                };
+            })
+            : [
+                { id: 1, description: "Real-world degradation 4x upscale", lrImage: "https://picsum.photos/seed/lr1/800/800", modelA: "https://picsum.photos/seed/hr1a/800/800", modelB: "https://picsum.photos/seed/hr1b/800/800", modelAName: "Real-ESRGAN", modelBName: "SwinIR" },
+                { id: 2, description: "Bicubic 4x + Gaussian Noise", lrImage: "https://picsum.photos/seed/lr2/800/800", modelA: "https://picsum.photos/seed/hr2a/800/800", modelB: "https://picsum.photos/seed/hr2b/800/800", modelAName: "BSRGAN", modelBName: "HAT" },
+                { id: 3, description: "Severe degradation 4x upscale", lrImage: "https://picsum.photos/seed/lr3/800/800", modelA: "https://picsum.photos/seed/hr3a/800/800", modelB: "https://picsum.photos/seed/hr3b/800/800", modelAName: "CodeFormer", modelBName: "GFPGAN" },
+                { id: 4, description: "Unknown real-world LR", lrImage: "https://picsum.photos/seed/lr4/800/800", modelA: "https://picsum.photos/seed/hr4a/800/800", modelB: "https://picsum.photos/seed/hr4b/800/800", modelAName: "StableSR", modelBName: "Real-ESRGAN" }
+            ];
 
         const shuffleArray = (arr) => {
             const a = [...arr];
@@ -283,7 +299,7 @@
                     return shuffled.map(item => {
                         const swapped = Math.random() > 0.5;
                         return {
-                            originalId: item.id,
+                            originalId: item.originalId || item.id,
                             description: item.description,
                             lrImage: item.lrImage,
                             displayModelA: swapped ? item.modelB : item.modelA,
