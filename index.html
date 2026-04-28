@@ -116,6 +116,18 @@
                 from { opacity: 0; transform: translateY(20px); }
                 to { opacity: 1; transform: translateY(0); }
             }
+
+        /* Hover effect for clickable model panels to indicate voting */
+        .vote-panel {
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .vote-panel:hover {
+            box-shadow: inset 0 0 0 4px #6366f1; /* Tailwind indigo-500 */
+        }
+        .vote-panel:active {
+            transform: scale(0.99);
+        }
         </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -168,7 +180,7 @@
                     <div class="zoom-info">{{ globalScale.toFixed(1) }}x</div>
                 </div>
 
-                <div class="sync-panel" ref="modelAPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
+                <div class="sync-panel vote-panel" ref="modelAPanel" @click="vote('A')" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
                     <div class="panel-label">
                         Model A <span v-if="revealed" class="text-indigo-300 ml-1">({{ currentTask.displayModelAName }})</span>
                         <span v-else class="text-gray-400 ml-1">(???)</span>
@@ -183,7 +195,7 @@
                 </div>
 
                 <!-- Model B Panel -->
-                <div class="sync-panel" ref="modelBPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
+                <div class="sync-panel vote-panel" ref="modelBPanel" @click="vote('B')" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
                     <div class="panel-label">
                         Model B <span v-if="revealed" class="text-indigo-300 ml-1">({{ currentTask.displayModelBName }})</span>
                         <span v-else class="text-gray-400 ml-1">(???)</span>
