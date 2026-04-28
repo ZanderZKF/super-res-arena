@@ -246,7 +246,11 @@
     <script>
         const { createApp, ref, computed, onMounted } = Vue;
 
-        const availableModels = ['sd3', 'flux2-9B', 'zimage'];
+        const availableModels = [
+            { id: 'sd3', path: 'resfusion_sd3_lsdir_rsr1_flowT20_debug20260323' },
+            { id: 'flux2-9B', path: 'flux_realsr' },
+            { id: 'zimage', path: 'zimage_REALSR82001' }
+        ];
 
         const localFiles = Array.isArray(window.ARENA_FILES) ? window.ARENA_FILES : [];
         const rawDatasets = localFiles.length > 0
@@ -256,7 +260,7 @@
                     id: index + 1,
                     originalId: basename,
                     description: basename,
-                    // 指向归档里的真实 LR 文件夹
+                    // 将资源目录假设和 index.html 放在同级，比如发布时将这些文件夹拷贝过来
                     lrImage: `./RealSRVal_crop128/test_LR/${filename}`,
                     filename: filename
                 };
@@ -328,8 +332,8 @@
                         // 所以这里我们在本地组装路径，只要不把模型名字暴露在 UI 上即可。
                         
                         const isLocal = localFiles.length > 0;
-                        const img1Path = isLocal ? `./${selectedModel1}/${item.filename}` : `https://picsum.photos/seed/${item.id}a/800/800`;
-                        const img2Path = isLocal ? `./${selectedModel2}/${item.filename}` : `https://picsum.photos/seed/${item.id}b/800/800`;
+                        const img1Path = isLocal ? `./${selectedModel1.path}/${item.filename}` : `https://picsum.photos/seed/${item.id}a/800/800`;
+                        const img2Path = isLocal ? `./${selectedModel2.path}/${item.filename}` : `https://picsum.photos/seed/${item.id}b/800/800`;
 
                         return {
                             originalId: item.originalId || item.id,
@@ -339,8 +343,8 @@
                             displayModelA: swapped ? img2Path : img1Path,
                             displayModelB: swapped ? img1Path : img2Path,
                             // 真实的模型名字只在内存里，投票后才揭晓
-                            displayModelAName: swapped ? selectedModel2 : selectedModel1,
-                            displayModelBName: swapped ? selectedModel1 : selectedModel2,
+                            displayModelAName: swapped ? selectedModel2.id : selectedModel1.id,
+                            displayModelBName: swapped ? selectedModel1.id : selectedModel2.id,
                             isSwapped: swapped,
                             lrBlob: null,
                             modelABlob: null,
