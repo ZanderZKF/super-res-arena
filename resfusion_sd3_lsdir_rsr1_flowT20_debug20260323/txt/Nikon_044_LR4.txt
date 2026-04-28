@@ -1,0 +1,1 @@
+attach, bird, building, white, window, ,
