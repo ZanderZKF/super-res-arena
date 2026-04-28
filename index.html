@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super-Res Arena - 图像超分辨率同步对比评测</title>
+    <title>Super-Res Arena - Image Super-Resolution Blind Test</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -120,7 +120,7 @@
                 Super-Res Arena
             </h1>
             <div class="flex items-center space-x-2 text-sm font-medium text-gray-600">
-                <span>评测进度:</span>
+                <span>Progress:</span>
                 <span :class="{'text-green-600 font-bold': completedCount >= targetTaskCount}">
                     {{ completedCount }} / {{ targetTaskCount }}+
                 </span>
@@ -141,19 +141,22 @@
             <!-- 退化信息条 -->
             <div class="bg-white rounded-lg px-5 py-3 shadow-sm border flex items-center justify-between">
                 <div class="flex items-center gap-4">
-                    <span class="font-bold text-gray-700">测试组 #{{ currentTask.originalId }}</span>
+                    <span class="font-bold text-gray-700">Task #{{ currentTask.originalId }}</span>
                     <span class="text-sm text-gray-500"><i class="fa-solid fa-circle-info text-indigo-400 mr-1"></i>{{ currentTask.description }}</span>
                 </div>
-                <div class="text-xs text-gray-400">滚轮缩放 · 拖拽平移 · 三图同步</div>
+                <div class="text-xs text-gray-400">Scroll to zoom · Drag to pan · Synced</div>
             </div>
 
             <!-- 三个同步面板 -->
             <div class="sync-viewer-container w-full">
                 <!-- LR Panel -->
                 <div class="sync-panel" ref="lrPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
-                    <div class="panel-label">LR 原图 (低分辨率)</div>
+                    <div class="panel-label">LR Image</div>
                     <div class="img-wrapper" :style="wrapperStyle">
-                        <img ref="lrImg" :src="currentTask.lrImage" @load="onImgLoad('lr')" />
+                        <div v-if="!currentTask.lrBlob" class="absolute inset-0 flex items-center justify-center text-gray-500">
+                            <i class="fa-solid fa-spinner fa-spin text-2xl"></i>
+                        </div>
+                        <img v-else ref="lrImg" :src="currentTask.lrBlob" @load="onImgLoad('lr')" />
                     </div>
                     <div class="zoom-info">{{ globalScale.toFixed(1) }}x</div>
                 </div>
@@ -164,7 +167,10 @@
                         <span v-else class="text-gray-400 ml-1">(???)</span>
                     </div>
                     <div class="img-wrapper" :style="wrapperStyle">
-                        <img ref="modelAImg" :src="currentTask.displayModelA" @load="onImgLoad('a')" />
+                        <div v-if="!currentTask.modelABlob" class="absolute inset-0 flex items-center justify-center text-gray-500">
+                            <i class="fa-solid fa-spinner fa-spin text-2xl"></i>
+                        </div>
+                        <img v-else ref="modelAImg" :src="currentTask.modelABlob" @load="onImgLoad('a')" />
                     </div>
                     <div class="zoom-info">{{ globalScale.toFixed(1) }}x</div>
                 </div>
@@ -176,7 +182,10 @@
                         <span v-else class="text-gray-400 ml-1">(???)</span>
                     </div>
                     <div class="img-wrapper" :style="wrapperStyle">
-                        <img ref="modelBImg" :src="currentTask.displayModelB" @load="onImgLoad('b')" />
+                        <div v-if="!currentTask.modelBBlob" class="absolute inset-0 flex items-center justify-center text-gray-500">
+                            <i class="fa-solid fa-spinner fa-spin text-2xl"></i>
+                        </div>
+                        <img v-else ref="modelBImg" :src="currentTask.modelBBlob" @load="onImgLoad('b')" />
                     </div>
                     <div class="zoom-info">{{ globalScale.toFixed(1) }}x</div>
                 </div>
@@ -186,16 +195,16 @@
             <div class="bg-white rounded-xl shadow-sm border p-4 flex flex-col items-center gap-4 relative w-full shrink-0">
                 <div class="flex flex-wrap justify-center gap-3">
                     <button @click="vote('A')" :disabled="revealed" class="px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2">
-                        <i class="fa-solid fa-hand-point-left"></i> Model A 细节更好
+                        <i class="fa-solid fa-hand-point-left"></i> Model A is better
                     </button>
                     <button @click="vote('B')" :disabled="revealed" class="px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2">
-                        Model B 细节更好 <i class="fa-solid fa-hand-point-right"></i>
+                        Model B is better <i class="fa-solid fa-hand-point-right"></i>
                     </button>
                     <button @click="vote('Tie')" :disabled="revealed" class="px-5 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2">
-                        <i class="fa-solid fa-handshake"></i> 平局
+                        <i class="fa-solid fa-handshake"></i> Tie
                     </button>
                     <button @click="vote('BothBad')" :disabled="revealed" class="px-5 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2">
-                        <i class="fa-solid fa-thumbs-down"></i> 都很差
+                        <i class="fa-solid fa-thumbs-down"></i> Both are bad
                     </button>
                 </div>
 
@@ -203,7 +212,7 @@
                 <div class="mt-4 flex flex-col items-center">
                     <div v-if="revealed" class="px-6 py-2 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm font-bold shadow-inner mb-4 flex items-center animate-fade-in-up">
                         <i class="fa-solid fa-circle-check mr-2"></i> 
-                        已记录! 真实模型为：左侧 = {{ currentTask.displayModelAName }} | 右侧 = {{ currentTask.displayModelBName }}
+                        Recorded! Left = {{ currentTask.displayModelAName }} | Right = {{ currentTask.displayModelBName }}
                     </div>
                 </div>
             </div>
@@ -214,13 +223,13 @@
             <!-- 完成页面 -->
             <div v-else class="flex flex-col items-center justify-center min-h-screen p-4 text-center">
                 <!-- 这里可以暂时留空，因为无限模式下很难走到这里，除非题库耗尽且不重复出题 -->
-                <h2 class="text-3xl font-bold text-gray-800 mb-2">评测全部完成！</h2>
-                <p class="text-gray-600 mb-8">您已评测完所有的照片组，感谢您的参与。</p>
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">All tasks completed!</h2>
+                <p class="text-gray-600 mb-8">You have completed all the tasks. Thank you for your participation.</p>
             </div>
 
             <!-- 右下角悬浮提示 -->
             <div v-if="submitSuccess" class="fixed bottom-4 right-4 bg-green-100 text-green-700 px-4 py-2 rounded shadow-lg text-sm font-bold flex items-center animate-fade-in-up">
-                <i class="fa-solid fa-cloud-arrow-up mr-2"></i> 投票已自动同步
+                <i class="fa-solid fa-cloud-arrow-up mr-2"></i> Vote synced
             </div>
 
         </main>
@@ -229,6 +238,8 @@
     <script src="./arena-files.js"></script>
     <script>
         const { createApp, ref, computed, onMounted } = Vue;
+
+        const availableModels = ['flux2-4B', 'SD3', 'Midjourney', 'DALL-E3'];
 
         const localFiles = Array.isArray(window.ARENA_FILES) ? window.ARENA_FILES : [];
         const rawDatasets = localFiles.length > 0
@@ -239,17 +250,14 @@
                     originalId: basename,
                     description: basename,
                     lrImage: `./RealSRVal_crop128/test_LR_bicubic_512/${filename}`,
-                    modelA: `./flux2-4B/${filename}`,
-                    modelB: `./SD3/${filename}`,
-                    modelAName: 'flux2-4B',
-                    modelBName: 'SD3'
+                    filename: filename
                 };
             })
             : [
-                { id: 1, description: "Real-world degradation 4x upscale", lrImage: "https://picsum.photos/seed/lr1/800/800", modelA: "https://picsum.photos/seed/hr1a/800/800", modelB: "https://picsum.photos/seed/hr1b/800/800", modelAName: "Real-ESRGAN", modelBName: "SwinIR" },
-                { id: 2, description: "Bicubic 4x + Gaussian Noise", lrImage: "https://picsum.photos/seed/lr2/800/800", modelA: "https://picsum.photos/seed/hr2a/800/800", modelB: "https://picsum.photos/seed/hr2b/800/800", modelAName: "BSRGAN", modelBName: "HAT" },
-                { id: 3, description: "Severe degradation 4x upscale", lrImage: "https://picsum.photos/seed/lr3/800/800", modelA: "https://picsum.photos/seed/hr3a/800/800", modelB: "https://picsum.photos/seed/hr3b/800/800", modelAName: "CodeFormer", modelBName: "GFPGAN" },
-                { id: 4, description: "Unknown real-world LR", lrImage: "https://picsum.photos/seed/lr4/800/800", modelA: "https://picsum.photos/seed/hr4a/800/800", modelB: "https://picsum.photos/seed/hr4b/800/800", modelAName: "StableSR", modelBName: "Real-ESRGAN" }
+                { id: 1, description: "Real-world degradation 4x upscale", lrImage: "https://picsum.photos/seed/lr1/800/800", filename: "img1.png" },
+                { id: 2, description: "Bicubic 4x + Gaussian Noise", lrImage: "https://picsum.photos/seed/lr2/800/800", filename: "img2.png" },
+                { id: 3, description: "Severe degradation 4x upscale", lrImage: "https://picsum.photos/seed/lr3/800/800", filename: "img3.png" },
+                { id: 4, description: "Unknown real-world LR", lrImage: "https://picsum.photos/seed/lr4/800/800", filename: "img4.png" }
             ];
 
         const shuffleArray = (arr) => {
@@ -298,21 +306,66 @@
                     const shuffled = shuffleArray(extendedPool);
                     return shuffled.map(item => {
                         const swapped = Math.random() > 0.5;
+                        
+                        // 随机从可用的模型中挑选2个不同的模型
+                        const shuffledModels = shuffleArray([...availableModels]);
+                        const selectedModel1 = shuffledModels[0];
+                        const selectedModel2 = shuffledModels[1];
+                        
+                        // 根据是否是本地数据或者是网络兜底图，生成对应的图片路径
+                        // 使用 Blob URL 或者代理路由来隐藏真实路径是一个复杂的系统工程，
+                        // 但纯前端最简单的防止通过F12直接看出模型名字的方法，是通过一个统一的接口或者混淆路径。
+                        // 这里我们使用一个简单的 base64 编码策略或者后端代理占位符策略。
+                        // 由于没有后端，我们只能改变 src，但 src 只要能加载图片就一定能被F12抓到网络请求。
+                        // 所以这里我们在本地组装路径，只要不把模型名字暴露在 UI 上即可。
+                        
+                        const isLocal = localFiles.length > 0;
+                        const img1Path = isLocal ? `./${selectedModel1}/${item.filename}` : `https://picsum.photos/seed/${item.id}a/800/800`;
+                        const img2Path = isLocal ? `./${selectedModel2}/${item.filename}` : `https://picsum.photos/seed/${item.id}b/800/800`;
+
                         return {
                             originalId: item.originalId || item.id,
                             description: item.description,
                             lrImage: item.lrImage,
-                            displayModelA: swapped ? item.modelB : item.modelA,
-                            displayModelB: swapped ? item.modelA : item.modelB,
-                            displayModelAName: swapped ? item.modelBName : item.modelAName,
-                            displayModelBName: swapped ? item.modelAName : item.modelBName,
-                            isSwapped: swapped
+                            // 注意：这里的 displayModelA/B 是展示给用户的图片，并不直接包含模型名字
+                            displayModelA: swapped ? img2Path : img1Path,
+                            displayModelB: swapped ? img1Path : img2Path,
+                            // 真实的模型名字只在内存里，投票后才揭晓
+                            displayModelAName: swapped ? selectedModel2 : selectedModel1,
+                            displayModelBName: swapped ? selectedModel1 : selectedModel2,
+                            isSwapped: swapped,
+                            lrBlob: null,
+                            modelABlob: null,
+                            modelBBlob: null
                         };
                     });
                 };
 
-                const initTasks = () => {
+                // 将真实URL转换为Blob URL，以隐藏原始路径
+                const loadImagesAsBlobs = async (task) => {
+                    const fetchAsBlob = async (url) => {
+                        try {
+                            const res = await fetch(url);
+                            const blob = await res.blob();
+                            return URL.createObjectURL(blob);
+                        } catch (e) {
+                            console.error('Failed to load image:', url, e);
+                            return url; // 失败时降级返回原URL
+                        }
+                    };
+
+                    // 避免重复加载
+                    if (!task.lrBlob) task.lrBlob = await fetchAsBlob(task.lrImage);
+                    if (!task.modelABlob) task.modelABlob = await fetchAsBlob(task.displayModelA);
+                    if (!task.modelBBlob) task.modelBBlob = await fetchAsBlob(task.displayModelB);
+                };
+
+                const initTasks = async () => {
                     tasks.value = generateQueue();
+                    // 预加载第一组图片
+                    if (tasks.value.length > 0) {
+                        await loadImagesAsBlobs(tasks.value[0]);
+                    }
                 };
 
                 const resetViewer = () => {
@@ -442,12 +495,22 @@
                     }
                 };
 
-                const nextTask = () => {
+                const nextTask = async () => {
                     // 无限模式：只要点下一组，就继续往后走
                     currentTaskIndex.value++;
                     revealed.value = false;
                     resetViewer();
                     
+                    // 确保下一组的图片已经被转换为 Blob URL
+                    if (currentTaskIndex.value < tasks.value.length) {
+                        await loadImagesAsBlobs(tasks.value[currentTaskIndex.value]);
+                    }
+                    
+                    // 预加载下下一组的图片（提前缓冲，提升体验）
+                    if (currentTaskIndex.value + 1 < tasks.value.length) {
+                        loadImagesAsBlobs(tasks.value[currentTaskIndex.value + 1]);
+                    }
+
                     // 如果题库快见底了，再动态生成一批接在后面，实现真正的无限流
                     if (currentTaskIndex.value > tasks.value.length - 5) {
                         tasks.value = tasks.value.concat(generateQueue());
