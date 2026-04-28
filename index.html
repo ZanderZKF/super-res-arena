@@ -37,6 +37,13 @@
             pointer-events: none;
             image-rendering: auto;
         }
+        /* 针对 128x128 的低分辨率图，强制放大并保留马赛克像素感，以便更好对比细节 */
+        .lr-pixelated {
+            image-rendering: pixelated !important;
+            image-rendering: crisp-edges !important;
+            transform: scale(4); /* 128x128 放大 4 倍正好匹配 512x512 的展示效果 */
+            transform-origin: center center;
+        }
         .img-wrapper {
             position: relative;
             width: 100%;
@@ -156,7 +163,7 @@
                         <div v-if="!currentTask.lrBlob" class="absolute inset-0 flex items-center justify-center text-gray-500">
                             <i class="fa-solid fa-spinner fa-spin text-2xl"></i>
                         </div>
-                        <img v-else ref="lrImg" :src="currentTask.lrBlob" @load="onImgLoad('lr')" />
+                        <img v-else ref="lrImg" :src="currentTask.lrBlob" @load="onImgLoad('lr')" class="lr-pixelated" />
                     </div>
                     <div class="zoom-info">{{ globalScale.toFixed(1) }}x</div>
                 </div>
@@ -239,7 +246,7 @@
     <script>
         const { createApp, ref, computed, onMounted } = Vue;
 
-        const availableModels = ['flux2-4B', 'SD3', 'Midjourney', 'DALL-E3'];
+        const availableModels = ['sd3', 'flux2-9B', 'zimage'];
 
         const localFiles = Array.isArray(window.ARENA_FILES) ? window.ARENA_FILES : [];
         const rawDatasets = localFiles.length > 0
@@ -249,7 +256,8 @@
                     id: index + 1,
                     originalId: basename,
                     description: basename,
-                    lrImage: `./RealSRVal_crop128/test_LR_bicubic_512/${filename}`,
+                    // 指向归档里的真实 LR 文件夹
+                    lrImage: `./RealSRVal_crop128/test_LR/${filename}`,
                     filename: filename
                 };
             })
