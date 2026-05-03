@@ -264,6 +264,8 @@
             { id: 'zimage', path: 'zimage_REALSR82001' }
         ];
 
+        // 之前你的截图显示 Task 标题还是 Canon_001_LR4，说明 arena-files.js 还是用的老数据
+        // 我将强制回退到 lsdir 的 250 张照片
         const localFiles = Array.isArray(window.ARENA_FILES) ? window.ARENA_FILES : [];
         const rawDatasets = localFiles.length > 0
             ? localFiles.map((filename, index) => {
@@ -272,8 +274,8 @@
                     id: index + 1,
                     originalId: basename,
                     description: basename,
-                    // 将资源目录假设和 index.html 放在同级，比如发布时将这些文件夹拷贝过来
-                    lrImage: `./RealSRVal_crop128/test_LR/${filename}`,
+                    // LR 原图路径 (针对 lsdir 数据集)
+                    lrImage: `./lsdir_val_LR/${filename}`,
                     filename: filename
                 };
             })
