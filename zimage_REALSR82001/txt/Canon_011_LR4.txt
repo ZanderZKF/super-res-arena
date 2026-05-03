@@ -1,1 +1,0 @@
-attach, blue, clothesline, flag, hang, pole, red, sky, string, tree, wind, ,

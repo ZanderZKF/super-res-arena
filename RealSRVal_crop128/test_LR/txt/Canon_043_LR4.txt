@@ -1,1 +1,0 @@
-attach, pillar, rope, pole, rail, ,
