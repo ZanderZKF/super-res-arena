@@ -254,7 +254,10 @@
         </main>
     </div>
 
-    <script src="./arena-files.js"></script>
+    <!-- 强制禁用缓存，加上时间戳 -->
+    <script>
+        document.write('<script src="./arena-files.js?t=' + new Date().getTime() + '"><\/script>');
+    </script>
     <script>
         const { createApp, ref, computed, onMounted } = Vue;
 
