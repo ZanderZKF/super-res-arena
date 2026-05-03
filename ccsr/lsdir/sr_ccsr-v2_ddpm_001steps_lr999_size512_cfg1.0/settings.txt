@@ -1,0 +1,31 @@
+------------------ start ------------------
+controlnet_model_path : preset/models/
+pretrained_model_path : /home/szn/huggingface_cache/hub/models--Manojb--stable-diffusion-2-1-base/snapshots/0094d483a120f3f33dafbd187ea4aa60d10de75c
+vae_model_path : preset/models/vae
+added_prompt : clean, high-resolution, 8k
+negative_prompt : blurry, dotted, noise, raster lines, unclear, lowres, over-smoothed
+image_path : /home/szn/users/szn/projects/test_dataset/lsdir-val/X4_center_crop_128/val
+output_dir : /home/szn/users/xc/results/baseline/ccsr/lsdir
+mixed_precision : fp16
+guidance_scale : 1.0
+conditioning_scale : 1.0
+num_inference_steps : 1
+t_max : 0.6666
+t_min : 0.0
+process_size : 512
+upscale : 4
+seed : None
+sample_times : 1
+sample_method : ddpm
+align_method : adain
+start_steps : 999
+start_point : lr
+baseline_name : ccsr-v2
+use_vae_encode_condition : True
+tile_diffusion : False
+tile_diffusion_size : 512
+tile_diffusion_stride : 256
+tile_vae : False
+vae_decoder_tile_size : 224
+vae_encoder_tile_size : 1024
+------------------- end -------------------
