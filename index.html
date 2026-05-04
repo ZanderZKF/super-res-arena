@@ -383,8 +383,24 @@
                         extendedPool = extendedPool.concat(JSON.parse(JSON.stringify(rawDatasets)));
                     }
 
-                    const shuffled = shuffleArray(extendedPool);
-                    return shuffled.map((item, index) => {
+                    const hrFiles = ['0000006x4.png', '0000007x4.png', '0000010x4.png', '0000014x4.png', '0000016x4.png', '0000017x4.png', '0000066x4.png', '0000072x4.png', '0000080x4.png', '0000088x4.png', '0000089x4.png', '0000094x4.png', '0000098x4.png', '0000099x4.png', '0000100x4.png', '0000102x4.png', '0000103x4.png', '0000104x4.png', '0000105x4.png', '0000106x4.png', '0000107x4.png', '0000110x4.png', '0000111x4.png', '0000112x4.png', '0000113x4.png', '0000114x4.png', '0000115x4.png', '0000117x4.png', '0000122x4.png', '0000123x4.png', '0000128x4.png', '0000137x4.png', '0000138x4.png', '0000139x4.png', '0000148x4.png', '0000160x4.png', '0000162x4.png', '0000164x4.png', '0000165x4.png', '0000166x4.png', '0000170x4.png', '0000171x4.png', '0000172x4.png', '0000173x4.png', '0000174x4.png', '0000175x4.png', '0000177x4.png', '0000188x4.png', '0000189x4.png', '0000199x4.png', '0000201x4.png', '0000202x4.png', '0000203x4.png', '0000204x4.png', '0000205x4.png', '0000206x4.png', '0000207x4.png', '0000211x4.png', '0000212x4.png', '0000213x4.png', '0000214x4.png', '0000216x4.png', '0000217x4.png', '0000228x4.png', '0000229x4.png', '0000238x4.png', '0000239x4.png', '0000240x4.png', '0000248x4.png'];
+                    
+                    // 分离出有 HR 的图片和没有 HR 的图片
+                    const hrAvailableItems = extendedPool.filter(item => hrFiles.includes(item.filename));
+                    const otherItems = extendedPool.filter(item => !hrFiles.includes(item.filename));
+                    
+                    // 打乱两部分
+                    const shuffledHr = shuffleArray([...hrAvailableItems]);
+                    const shuffledOther = shuffleArray([...otherItems]);
+                    
+                    // 确保前5道题来自有 HR 的图片
+                    const tutorialItems = shuffledHr.slice(0, 5);
+                    const remainingItems = shuffleArray([...shuffledHr.slice(5), ...shuffledOther]);
+                    
+                    const finalTasks = [...tutorialItems, ...remainingItems];
+
+                    // 为每道题分配对比组合
+                    return finalTasks.map((item, index) => {
                         const swapped = Math.random() > 0.5;
                         
                         let currentPair = [];
