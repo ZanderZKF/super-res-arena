@@ -775,6 +775,14 @@
                 const showMilestoneModal = ref(false);
                 const showWelcomeModal = ref(true); // 控制欢迎视频弹窗
 
+                // 检查是否已经看过教程
+                onMounted(() => {
+                    const hasSeenTutorial = localStorage.getItem('hasSeenTutorial');
+                    if (hasSeenTutorial) {
+                        showWelcomeModal.value = false;
+                    }
+                });
+
                 // 强制阻止弹窗背后的滚动，以防用户无意间划走
                 watch(showWelcomeModal, (newVal) => {
                     if (newVal) {
@@ -786,6 +794,7 @@
 
                 const startEvaluation = () => {
                     showWelcomeModal.value = false;
+                    localStorage.setItem('hasSeenTutorial', 'true');
                 };
 
                 // 发送单条数据到飞书 Webhook
