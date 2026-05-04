@@ -217,12 +217,12 @@
                     <div class="zoom-info">{{ globalScale.toFixed(1) }}x</div>
                 </div>
 
-                <div class="sync-panel vote-panel" :class="{'gt-highlight': currentTaskIndex < 5 && currentTask.modelA.id === 'GT_HR'}" ref="modelAPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
+                <div class="sync-panel vote-panel" :class="{'gt-highlight': currentTaskIndex < 5 && currentTask.displayModelAName === 'GT_HR'}" ref="modelAPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
                     <div class="panel-label">
                         Model A <span v-if="revealed" class="text-indigo-300 ml-1">({{ currentTask.displayModelAName }})</span>
                         <span v-else class="text-gray-400 ml-1">(???)</span>
                     </div>
-                    <div v-if="currentTaskIndex < 5 && currentTask.modelA.id === 'GT_HR'" class="gt-label">
+                    <div v-if="currentTaskIndex < 5 && currentTask.displayModelAName === 'GT_HR'" class="gt-label">
                         <i class="fa-solid fa-arrow-pointer mr-2"></i>This is more realistic.<br>Vote for this!
                     </div>
                     <div class="img-wrapper" :style="wrapperStyle">
@@ -235,12 +235,12 @@
                 </div>
 
                 <!-- Model B Panel -->
-                <div class="sync-panel vote-panel" :class="{'gt-highlight': currentTaskIndex < 5 && currentTask.modelB.id === 'GT_HR'}" ref="modelBPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
+                <div class="sync-panel vote-panel" :class="{'gt-highlight': currentTaskIndex < 5 && currentTask.displayModelBName === 'GT_HR'}" ref="modelBPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
                     <div class="panel-label">
                         Model B <span v-if="revealed" class="text-indigo-300 ml-1">({{ currentTask.displayModelBName }})</span>
                         <span v-else class="text-gray-400 ml-1">(???)</span>
                     </div>
-                    <div v-if="currentTaskIndex < 5 && currentTask.modelB.id === 'GT_HR'" class="gt-label">
+                    <div v-if="currentTaskIndex < 5 && currentTask.displayModelBName === 'GT_HR'" class="gt-label">
                         <i class="fa-solid fa-arrow-pointer mr-2"></i>This is more realistic.<br>Vote for this!
                     </div>
                     <div class="img-wrapper" :style="wrapperStyle">
