@@ -780,6 +780,10 @@
                     const hasSeenTutorial = localStorage.getItem('hasSeenTutorial');
                     if (hasSeenTutorial) {
                         showWelcomeModal.value = false;
+                        document.body.style.overflow = '';
+                    } else {
+                        showWelcomeModal.value = true;
+                        document.body.style.overflow = 'hidden';
                     }
                 });
 
@@ -790,11 +794,12 @@
                     } else {
                         document.body.style.overflow = '';
                     }
-                }, { immediate: true });
+                });
 
                 const startEvaluation = () => {
                     showWelcomeModal.value = false;
                     localStorage.setItem('hasSeenTutorial', 'true');
+                    document.body.style.overflow = ''; // 确保关闭弹窗时恢复滚动
                 };
 
                 // 发送单条数据到飞书 Webhook
