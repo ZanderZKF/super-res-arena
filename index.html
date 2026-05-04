@@ -160,12 +160,37 @@
         .sync-panel.vote-panel {
             overflow: visible !important;
         }
-        /* 将原来的 overflow hidden 转移到图片包裹层 */
-        .sync-panel .img-wrapper {
+        .sync-panel {
+            flex: 1;
+            background: #1a1a1a;
+            border-radius: 12px;
+            position: relative;
+            cursor: grab;
+            user-select: none;
+            overflow: visible; /* 允许超出 */
+        }
+        /* 外层容器负责形状和隐藏溢出 */
+        .sync-panel-inner {
             border-radius: 12px;
             overflow: hidden;
             width: 100%;
             height: 100%;
+            position: relative;
+            background: #1a1a1a;
+        }
+        /* 移动容器不再负责隐藏，只负责形变 */
+        .sync-panel .img-wrapper {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .sync-panel .img-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* 确保图片完整显示且保持比例 */
         }
     </style>
 </head>
@@ -220,11 +245,13 @@
                 <!-- LR Panel -->
                 <div class="sync-panel" ref="lrPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
                     <div class="panel-label">LR Image</div>
-                    <div class="img-wrapper" :style="wrapperStyle">
-                        <div v-if="!currentTask.lrBlob" class="absolute inset-0 flex items-center justify-center text-gray-500">
-                            <i class="fa-solid fa-spinner fa-spin text-2xl"></i>
+                    <div class="sync-panel-inner">
+                        <div class="img-wrapper" :style="wrapperStyle">
+                            <div v-if="!currentTask.lrBlob" class="absolute inset-0 flex items-center justify-center text-gray-500">
+                                <i class="fa-solid fa-spinner fa-spin text-2xl"></i>
+                            </div>
+                            <img v-else ref="lrImg" :src="currentTask.lrBlob" @load="onImgLoad('lr')" class="lr-pixelated" />
                         </div>
-                        <img v-else ref="lrImg" :src="currentTask.lrBlob" @load="onImgLoad('lr')" class="lr-pixelated" />
                     </div>
                     <div class="zoom-info">{{ globalScale.toFixed(1) }}x</div>
                 </div>
@@ -237,11 +264,13 @@
                     <div v-if="currentTaskIndex < 3 && currentTask.displayModelAName === 'GT_HR'" class="gt-label">
                         <i class="fa-solid fa-hand-pointer mr-1"></i> Vote for this (More realistic)
                     </div>
-                    <div class="img-wrapper" :style="wrapperStyle">
-                        <div v-if="!currentTask.modelABlob" class="absolute inset-0 flex items-center justify-center text-gray-500">
-                            <i class="fa-solid fa-spinner fa-spin text-2xl"></i>
+                    <div class="sync-panel-inner">
+                        <div class="img-wrapper" :style="wrapperStyle">
+                            <div v-if="!currentTask.modelABlob" class="absolute inset-0 flex items-center justify-center text-gray-500">
+                                <i class="fa-solid fa-spinner fa-spin text-2xl"></i>
+                            </div>
+                            <img v-else ref="modelAImg" :src="currentTask.modelABlob" @load="onImgLoad('a')" />
                         </div>
-                        <img v-else ref="modelAImg" :src="currentTask.modelABlob" @load="onImgLoad('a')" />
                     </div>
                     <div class="zoom-info">{{ globalScale.toFixed(1) }}x</div>
                 </div>
@@ -255,11 +284,13 @@
                     <div v-if="currentTaskIndex < 3 && currentTask.displayModelBName === 'GT_HR'" class="gt-label">
                         <i class="fa-solid fa-hand-pointer mr-1"></i> Vote for this (More realistic)
                     </div>
-                    <div class="img-wrapper" :style="wrapperStyle">
-                        <div v-if="!currentTask.modelBBlob" class="absolute inset-0 flex items-center justify-center text-gray-500">
-                            <i class="fa-solid fa-spinner fa-spin text-2xl"></i>
+                    <div class="sync-panel-inner">
+                        <div class="img-wrapper" :style="wrapperStyle">
+                            <div v-if="!currentTask.modelBBlob" class="absolute inset-0 flex items-center justify-center text-gray-500">
+                                <i class="fa-solid fa-spinner fa-spin text-2xl"></i>
+                            </div>
+                            <img v-else ref="modelBImg" :src="currentTask.modelBBlob" @load="onImgLoad('b')" />
                         </div>
-                        <img v-else ref="modelBImg" :src="currentTask.modelBBlob" @load="onImgLoad('b')" />
                     </div>
                     <div class="zoom-info">{{ globalScale.toFixed(1) }}x</div>
                 </div>
@@ -570,6 +601,8 @@
 
                 // 增加标志位：阻止多点触控/快速滑动导致的频繁渲染
                 let isThrottled = false;
+                let dragStartGlobalOffsetX = 0;
+                let dragStartGlobalOffsetY = 0;
 
                 const onWheel = (e) => {
                     if (isThrottled) return;
@@ -596,8 +629,8 @@
                     isDragging = true;
                     dragStartX = e.clientX;
                     dragStartY = e.clientY;
-                    dragStartOffsetX = globalOffsetX.value;
-                    dragStartOffsetY = globalOffsetY.value;
+                    dragStartGlobalOffsetX = globalOffsetX.value;
+                    dragStartGlobalOffsetY = globalOffsetY.value;
                     document.body.style.cursor = 'grabbing';
                 };
 
@@ -609,8 +642,8 @@
 
                     const dx = e.clientX - dragStartX;
                     const dy = e.clientY - dragStartY;
-                    globalOffsetX.value = dragStartOffsetX + dx;
-                    globalOffsetY.value = dragStartOffsetY + dy;
+                    globalOffsetX.value = dragStartGlobalOffsetX + dx;
+                    globalOffsetY.value = dragStartGlobalOffsetY + dy;
                 };
 
                 const onMouseUp = () => {
