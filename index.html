@@ -271,7 +271,8 @@
         ];
 
         // Ours 模型
-        const oursModel = { id: '9B_gan_lsdir', path: '9B_gan_lsdir' };
+        const model9B = { id: '9B_gan_lsdir', path: '9B_gan_lsdir' };
+        const modelZimage = { id: 'zimage_gan_LSDIR', path: 'zimage_gan_LSDIR' };
 
         // 之前你的截图显示 Task 标题还是 Canon_001_LR4，说明 arena-files.js 还是用的老数据
         // 我将强制回退到 lsdir 的 250 张照片
@@ -342,11 +343,28 @@
                     return shuffled.map(item => {
                         const swapped = Math.random() > 0.5;
                         
-                        // 随机从可用的模型中挑选2个不同的模型
-                        // 从 baseline 中随机选一个
-                        const randomBaseline = baselineModels[Math.floor(Math.random() * baselineModels.length)];
-                        // 我们要对比的两个模型
-                        const currentPair = [oursModel, randomBaseline];
+                        // 根据给定的比例分配对比组合：
+                        // 9B + zimage: 5
+                        // 9B + baseline: 15
+                        // zimage + baseline: 15
+                        // baseline + baseline: 15
+                        // 总权重 = 50
+                        const randWeight = Math.random() * 50;
+                        let currentPair = [];
+
+                        if (randWeight < 5) {
+                            currentPair = [model9B, modelZimage];
+                        } else if (randWeight < 20) {
+                            const randomBaseline = baselineModels[Math.floor(Math.random() * baselineModels.length)];
+                            currentPair = [model9B, randomBaseline];
+                        } else if (randWeight < 35) {
+                            const randomBaseline = baselineModels[Math.floor(Math.random() * baselineModels.length)];
+                            currentPair = [modelZimage, randomBaseline];
+                        } else {
+                            const shuffledBaselines = shuffleArray([...baselineModels]);
+                            currentPair = [shuffledBaselines[0], shuffledBaselines[1]];
+                        }
+
                         // 打乱它们，决定谁是 selectedModel1，谁是 selectedModel2
                         const shuffledModels = shuffleArray(currentPair);
                         const selectedModel1 = shuffledModels[0];
