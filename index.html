@@ -159,6 +159,15 @@
             
             <template v-if="currentTask && currentTask.originalId">
                 <div class="main-content flex flex-col gap-3 h-full">
+            <!-- 引导提示条 -->
+            <div v-if="currentTaskIndex < 5" class="bg-indigo-50 border border-indigo-200 text-indigo-800 rounded-lg px-5 py-3 shadow-sm flex items-center gap-3 animate-pulse">
+                <i class="fa-solid fa-graduation-cap text-indigo-600 text-xl"></i>
+                <div>
+                    <h3 class="font-bold">Tutorial: How to evaluate</h3>
+                    <p class="text-sm opacity-90">Please select the image that looks <strong>more realistic</strong> and <strong>more like a real photo</strong>. In this example, one of the images is the actual Ground Truth (real photo) to help you calibrate your judgment.</p>
+                </div>
+            </div>
+
             <!-- 退化信息条 -->
             <div class="bg-white rounded-lg px-5 py-3 shadow-sm border flex items-center justify-between">
                 <div class="flex items-center gap-4">
@@ -305,6 +314,9 @@
         // Ours 模型
         const model9B = { id: '9B_gan_lsdir', path: '9B_gan_lsdir' };
         const modelZimage = { id: 'zimage_gan_LSDIR', path: 'zimage_gan_LSDIR' };
+        
+        // GT 模型 (用于前几题示例)
+        const modelGT = { id: 'GT_HR', path: 'HR' };
 
         // 之前你的截图显示 Task 标题还是 Canon_001_LR4，说明 arena-files.js 还是用的老数据
         // 我将强制回退到 lsdir 的 250 张照片
@@ -372,24 +384,32 @@
                     }
 
                     const shuffled = shuffleArray(extendedPool);
-                    return shuffled.map(item => {
+                    return shuffled.map((item, index) => {
                         const swapped = Math.random() > 0.5;
                         
-                        // 根据给定的比例分配对比组合：
-                        // 目前只保留 9B + baseline 和 zimage + baseline 两种情况
-                        // 比例各占 50%
-                        const randWeight = Math.random();
                         let currentPair = [];
                         let pairType = '';
 
-                        if (randWeight < 0.5) {
+                        // 前 5 题固定为 GT vs baseline 示例，用来引导用户选择更真实的图片
+                        if (index < 5) {
                             const randomBaseline = baselineModels[Math.floor(Math.random() * baselineModels.length)];
-                            currentPair = [model9B, randomBaseline];
-                            pairType = '9B vs baseline';
+                            currentPair = [modelGT, randomBaseline];
+                            pairType = 'GT vs baseline (Tutorial)';
                         } else {
-                            const randomBaseline = baselineModels[Math.floor(Math.random() * baselineModels.length)];
-                            currentPair = [modelZimage, randomBaseline];
-                            pairType = 'zimage vs baseline';
+                            // 根据给定的比例分配对比组合：
+                            // 目前只保留 9B + baseline 和 zimage + baseline 两种情况
+                            // 比例各占 50%
+                            const randWeight = Math.random();
+
+                            if (randWeight < 0.5) {
+                                const randomBaseline = baselineModels[Math.floor(Math.random() * baselineModels.length)];
+                                currentPair = [model9B, randomBaseline];
+                                pairType = '9B vs baseline';
+                            } else {
+                                const randomBaseline = baselineModels[Math.floor(Math.random() * baselineModels.length)];
+                                currentPair = [modelZimage, randomBaseline];
+                                pairType = 'zimage vs baseline';
+                            }
                         }
 
                         // 打乱它们，决定谁是 selectedModel1，谁是 selectedModel2
