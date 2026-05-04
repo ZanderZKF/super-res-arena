@@ -259,6 +259,31 @@
             </div>
 
         </main>
+
+        <!-- Footer -->
+        <footer class="bg-white border-t p-4 text-center text-sm text-gray-500 shrink-0">
+            Super-Res Arena &copy; 2026. Blind test platform for image super-resolution evaluation.
+        </footer>
+
+        <!-- 30 轮里程碑弹窗 -->
+        <div v-if="showMilestoneModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in-up">
+            <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md text-center transform transition-all">
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-trophy text-3xl text-green-500"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-2">Target Reached!</h3>
+                <p class="text-gray-600 mb-6">
+                    You have successfully completed 30 evaluations. Your contribution is highly appreciated! <br><br>
+                    You can either stop here and close the page, or continue testing to help us gather more data.
+                </p>
+                <div class="flex justify-center gap-4">
+                    <button @click="showMilestoneModal = false" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors">
+                        Continue Testing
+                    </button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- 强制禁用缓存，加上时间戳 -->
@@ -511,6 +536,11 @@
                     // 进度 +1
                     completedCount.value++;
 
+                    // 检查是否达到 30 轮的里程碑
+                    if (completedCount.value === 30) {
+                        showMilestoneModal.value = true;
+                    }
+
                     // 每投完一票，立刻把这条结果发给飞书
                     submitSingleVoteToFeishu(record);
                     
@@ -524,6 +554,7 @@
                 const isSubmitting = ref(false);
                 const submitSuccess = ref(false);
                 const submitError = ref(false);
+                const showMilestoneModal = ref(false);
 
                 // 发送单条数据到飞书 Webhook
                 const submitSingleVoteToFeishu = async (r) => {
@@ -596,7 +627,7 @@
                 return {
                     tasks, currentTaskIndex, currentTask, revealed, isFinished, results,
                     completedCount, targetTaskCount,
-                    isSubmitting, submitSuccess, submitError,
+                    isSubmitting, submitSuccess, submitError, showMilestoneModal,
                     globalScale, wrapperStyle, onImgLoad, onWheel,
                     onMouseDown, onMouseMove, onMouseUp, vote, nextTask, restart
                 };
