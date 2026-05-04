@@ -269,10 +269,14 @@
             <!-- 主内容区 -->
             <div class="bg-white rounded-xl shadow-sm border p-4 flex flex-col items-center gap-4 relative w-full shrink-0">
                 <div class="flex flex-wrap justify-center gap-3">
-                    <button @click="vote('A')" :disabled="revealed" class="px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2">
+                    <button @click="vote('A')" :disabled="revealed" 
+                        class="px-8 py-3 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2"
+                        :class="currentTaskIndex < 5 && currentTask.displayModelAName === 'GT_HR' ? 'bg-green-500 hover:bg-green-600 ring-4 ring-green-300' : 'bg-indigo-600 hover:bg-indigo-700'">
                         <i class="fa-solid fa-hand-point-left"></i> Model A is better
                     </button>
-                    <button @click="vote('B')" :disabled="revealed" class="px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2">
+                    <button @click="vote('B')" :disabled="revealed" 
+                        class="px-8 py-3 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2"
+                        :class="currentTaskIndex < 5 && currentTask.displayModelBName === 'GT_HR' ? 'bg-green-500 hover:bg-green-600 ring-4 ring-green-300' : 'bg-indigo-600 hover:bg-indigo-700'">
                         Model B is better <i class="fa-solid fa-hand-point-right"></i>
                     </button>
                     <button @click="vote('Tie')" :disabled="revealed" class="px-5 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2">
