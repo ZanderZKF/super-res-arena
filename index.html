@@ -477,7 +477,17 @@
                         const fixedTutorialFiles = ['0000019x4.png', '0000022x4.png', '0000243x4.png'];
                         
                         const tutorialItems = fixedTutorialFiles.map(file => {
-                            return extendedPool.find(item => item.filename === file) || { id: file.split('x')[0], filename: file };
+                            // 如果在 extendedPool 里找不到，就手动构造一个标准格式的 item 保证属性完整
+                            const found = extendedPool.find(item => item.filename === file);
+                            if (found) return found;
+                            
+                            const idStr = file.split('x')[0]; // 例如 0000019
+                            return {
+                                id: idStr,
+                                filename: file,
+                                lr: `lsdir_val_LR/${file}`,
+                                hr: `HR/${file}` // 补全 hr 路径以防缺失
+                            };
                         });
                         
                         // 剩下的所有图片混合打乱（去除掉教程已经用过的这3张）
