@@ -261,11 +261,17 @@
     <script>
         const { createApp, ref, computed, onMounted } = Vue;
 
-        const availableModels = [
-            { id: 'sd3', path: 'resfusion_sd3_lsdir_rsr1_flowT20_debug20260323' },
-            { id: 'flux2-9B', path: 'flux_realsr' },
-            { id: 'zimage', path: 'zimage_REALSR82001' }
+        // 基线模型
+        const baselineModels = [
+            { id: 'TSD-SR', path: 'TSD-SR' },
+            { id: 'addsr', path: 'addsr' },
+            { id: 'ccsr', path: 'ccsr' },
+            { id: 'resshift', path: 'resshift' },
+            { id: 'seesr', path: 'seesr' }
         ];
+
+        // Ours 模型
+        const oursModel = { id: '9B_gan_lsdir', path: '9B_gan_lsdir' };
 
         // 之前你的截图显示 Task 标题还是 Canon_001_LR4，说明 arena-files.js 还是用的老数据
         // 我将强制回退到 lsdir 的 250 张照片
@@ -337,7 +343,12 @@
                         const swapped = Math.random() > 0.5;
                         
                         // 随机从可用的模型中挑选2个不同的模型
-                        const shuffledModels = shuffleArray([...availableModels]);
+                        // 从 baseline 中随机选一个
+                        const randomBaseline = baselineModels[Math.floor(Math.random() * baselineModels.length)];
+                        // 我们要对比的两个模型
+                        const currentPair = [oursModel, randomBaseline];
+                        // 打乱它们，决定谁是 selectedModel1，谁是 selectedModel2
+                        const shuffledModels = shuffleArray(currentPair);
                         const selectedModel1 = shuffledModels[0];
                         const selectedModel2 = shuffledModels[1];
                         
