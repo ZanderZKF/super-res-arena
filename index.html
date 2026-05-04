@@ -475,10 +475,25 @@
                         
                         // 固定教程为这3张指定的图片
                         const fixedTutorialFiles = ['0000019x4.png', '0000022x4.png', '0000243x4.png'];
+
+                        // 分离出有 HR 的图片和没有 HR 的图片
+                        const hrAvailableItems = extendedPool.filter(item => hrFiles.includes(item.filename));
+                        const otherItems = extendedPool.filter(item => !hrFiles.includes(item.filename));
+                        
+                        // 强制将教学题用到的图加入到带HR的列表里，以防它们之前因为不包含在 hrFiles 里而被忽略
+                        fixedTutorialFiles.forEach(file => {
+                            if (!hrAvailableItems.find(item => item.filename === file)) {
+                                hrAvailableItems.push({
+                                    id: file.split('x')[0],
+                                    filename: file,
+                                    lrImage: `lsdir_val_LR/${file}`
+                                });
+                            }
+                        });
                         
                         const tutorialItems = fixedTutorialFiles.map(file => {
-                            // 尝试在题库中寻找，如果找到，确保它拥有正确的 hr 和 lr 属性
-                            const found = extendedPool.find(item => item.filename === file);
+                            // 尝试在扩展池或强制补全的池子里寻找
+                            let found = hrAvailableItems.find(item => item.filename === file);
                             
                             const idStr = file.split('x')[0]; // 例如 0000019
                             
@@ -486,7 +501,7 @@
                             return {
                                 id: idStr,
                                 filename: file,
-                                lr: `lsdir_val_LR/${file}`, // 强制重写正确的 lr 路径
+                                lrImage: `lsdir_val_LR/${file}`, // 这里必须是 lrImage，不能是 lr，因为下面组件处理时用的是 lrImage
                                 hr: `HR/${file}`            // 强制重写正确的 hr 路径
                             };
                         });
