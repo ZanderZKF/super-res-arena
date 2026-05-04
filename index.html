@@ -777,14 +777,9 @@
 
                 // 检查是否已经看过教程
                 onMounted(() => {
-                    const hasSeenTutorial = localStorage.getItem('hasSeenTutorial');
-                    if (hasSeenTutorial) {
-                        showWelcomeModal.value = false;
-                        document.body.style.overflow = '';
-                    } else {
-                        showWelcomeModal.value = true;
-                        document.body.style.overflow = 'hidden';
-                    }
+                    // 任何时候都弹出教程，不再检查 localStorage
+                    showWelcomeModal.value = true;
+                    document.body.style.overflow = 'hidden';
                 });
 
                 // 强制阻止弹窗背后的滚动，以防用户无意间划走
@@ -798,7 +793,6 @@
 
                 const startEvaluation = () => {
                     showWelcomeModal.value = false;
-                    localStorage.setItem('hasSeenTutorial', 'true');
                     document.body.style.overflow = ''; // 确保关闭弹窗时恢复滚动
                 };
 
