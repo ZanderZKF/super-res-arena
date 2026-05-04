@@ -64,8 +64,9 @@
             border-radius: 20px;
             font-size: 12px;
             font-weight: 600;
-            z-index: 10;
+            pointer-events: none;
             white-space: nowrap;
+            z-index: 10;
         }
         .zoom-controls {
             position: absolute;
@@ -95,12 +96,13 @@
             position: absolute;
             bottom: 12px;
             right: 12px;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.7);
             color: white;
-            padding: 4px 10px;
+            padding: 2px 8px;
             border-radius: 6px;
-            font-size: 11px;
+            font-size: 12px;
             font-family: monospace;
+            pointer-events: none;
             z-index: 10;
         }
         .fade-in { animation: fadeIn 0.5s ease-in; }
@@ -171,12 +173,16 @@
         }
         /* 外层容器负责形状和隐藏溢出 */
         .sync-panel-inner {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
             border-radius: 12px;
             overflow: hidden;
-            width: 100%;
-            height: 100%;
-            position: relative;
             background: #1a1a1a;
+            /* 强制创建层叠上下文，解决 Webkit 的圆角+Transform溢出 Bug */
+            isolation: isolate;
+            transform: translateZ(0);
+            -webkit-mask-image: -webkit-radial-gradient(white, black);
+            z-index: 1;
         }
         /* 移动容器不再负责隐藏，只负责形变 */
         .sync-panel .img-wrapper {
@@ -206,7 +212,12 @@
                 <span>Progress:</span>
                 <span v-if="currentTaskIndex < 3" class="text-indigo-600 font-bold">Tutorial</span>
                 <span v-else :class="{'text-green-600 font-bold': completedCount >= targetTaskCount}">
-                    {{ completedCount }} / {{ targetTaskCount }}+
+                    <template v-if="completedCount < targetTaskCount">
+                        {{ completedCount }} / {{ targetTaskCount }}
+                    </template>
+                    <template v-else>
+                        {{ completedCount }} Evaluated <span class="text-gray-500 font-normal text-xs ml-1">(Target: {{ targetTaskCount }}+)</span>
+                    </template>
                 </span>
                 <div class="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
                     <div class="h-full transition-all duration-300"
@@ -675,8 +686,10 @@
                         showMilestoneModal.value = true;
                     }
 
-                    // 每投完一票，立刻把这条结果发给飞书
-                    submitSingleVoteToFeishu(record);
+                    // 每投完一票，立刻把这条结果发给飞书 (仅在盲测阶段发送，Tutorial阶段不发送)
+                    if (currentTaskIndex.value >= 3) {
+                        submitSingleVoteToFeishu(record);
+                    }
                     
                     // 延迟 1 秒后自动切换到下一题（给用户留出 1 秒的时间看一眼胜出结果）
                     // 用户希望手动切换，所以去掉 setTimeout
