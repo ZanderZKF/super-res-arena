@@ -130,7 +130,32 @@
             /* transform: scale(0.99); */ /* 取消点击缩放 */
             cursor: grabbing;
         }
-        </style>
+            @keyframes highlight-glow {
+            0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); border-color: rgba(74, 222, 128, 1); }
+            70% { box-shadow: 0 0 0 15px rgba(74, 222, 128, 0); border-color: rgba(74, 222, 128, 0.5); }
+            100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); border-color: rgba(74, 222, 128, 1); }
+        }
+        .gt-highlight {
+            animation: highlight-glow 2s infinite;
+            border: 4px solid #4ade80 !important;
+        }
+        .gt-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(34, 197, 94, 0.9);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            pointer-events: none;
+            z-index: 50;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+    </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
     <div id="app" v-cloak class="h-screen flex flex-col">
@@ -142,7 +167,8 @@
             </h1>
             <div class="flex items-center space-x-2 text-sm font-medium text-gray-600">
                 <span>Progress:</span>
-                <span :class="{'text-green-600 font-bold': completedCount >= targetTaskCount}">
+                <span v-if="currentTaskIndex < 5" class="text-indigo-600 font-bold">Tutorial</span>
+                <span v-else :class="{'text-green-600 font-bold': completedCount >= targetTaskCount}">
                     {{ completedCount }} / {{ targetTaskCount }}+
                 </span>
                 <div class="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -160,11 +186,11 @@
             <template v-if="currentTask && currentTask.originalId">
                 <div class="main-content flex flex-col gap-3 h-full">
             <!-- 引导提示条 -->
-            <div v-if="currentTaskIndex < 5" class="bg-indigo-50 border border-indigo-200 text-indigo-800 rounded-lg px-5 py-3 shadow-sm flex items-center gap-3 animate-pulse">
-                <i class="fa-solid fa-graduation-cap text-indigo-600 text-xl"></i>
+            <div v-if="currentTaskIndex < 5" class="bg-green-50 border border-green-200 text-green-800 rounded-lg px-5 py-3 shadow-sm flex items-center gap-3">
+                <i class="fa-solid fa-graduation-cap text-green-600 text-xl"></i>
                 <div>
-                    <h3 class="font-bold">Tutorial: How to evaluate</h3>
-                    <p class="text-sm opacity-90">Please select the image that looks <strong>more realistic</strong> and <strong>more like a real photo</strong>. In this example, one of the images is the actual Ground Truth (real photo) to help you calibrate your judgment.</p>
+                    <h3 class="font-bold">Tutorial: How to evaluate ({{ currentTaskIndex + 1 }}/5)</h3>
+                    <p class="text-sm opacity-90">Please select the image that looks <strong>more realistic</strong>. In this tutorial, the flashing image is the real Ground Truth photo. Choose it to learn what we are looking for!</p>
                 </div>
             </div>
 
@@ -191,10 +217,13 @@
                     <div class="zoom-info">{{ globalScale.toFixed(1) }}x</div>
                 </div>
 
-                <div class="sync-panel vote-panel" ref="modelAPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
+                <div class="sync-panel vote-panel" :class="{'gt-highlight': currentTaskIndex < 5 && currentTask.modelA.id === 'GT_HR'}" ref="modelAPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
                     <div class="panel-label">
                         Model A <span v-if="revealed" class="text-indigo-300 ml-1">({{ currentTask.displayModelAName }})</span>
                         <span v-else class="text-gray-400 ml-1">(???)</span>
+                    </div>
+                    <div v-if="currentTaskIndex < 5 && currentTask.modelA.id === 'GT_HR'" class="gt-label">
+                        <i class="fa-solid fa-arrow-pointer mr-2"></i>This is more realistic.<br>Vote for this!
                     </div>
                     <div class="img-wrapper" :style="wrapperStyle">
                         <div v-if="!currentTask.modelABlob" class="absolute inset-0 flex items-center justify-center text-gray-500">
@@ -206,10 +235,13 @@
                 </div>
 
                 <!-- Model B Panel -->
-                <div class="sync-panel vote-panel" ref="modelBPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
+                <div class="sync-panel vote-panel" :class="{'gt-highlight': currentTaskIndex < 5 && currentTask.modelB.id === 'GT_HR'}" ref="modelBPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
                     <div class="panel-label">
                         Model B <span v-if="revealed" class="text-indigo-300 ml-1">({{ currentTask.displayModelBName }})</span>
                         <span v-else class="text-gray-400 ml-1">(???)</span>
+                    </div>
+                    <div v-if="currentTaskIndex < 5 && currentTask.modelB.id === 'GT_HR'" class="gt-label">
+                        <i class="fa-solid fa-arrow-pointer mr-2"></i>This is more realistic.<br>Vote for this!
                     </div>
                     <div class="img-wrapper" :style="wrapperStyle">
                         <div v-if="!currentTask.modelBBlob" class="absolute inset-0 flex items-center justify-center text-gray-500">
@@ -572,8 +604,10 @@
                     };
                     results.value.push(record);
                     
-                    // 进度 +1
-                    completedCount.value++;
+                    // 如果是前5道教学题，不计入进度条
+                    if (currentTaskIndex.value >= 5) {
+                        completedCount.value++;
+                    }
 
                     // 检查是否达到 30 轮的里程碑
                     if (completedCount.value === 30) {
