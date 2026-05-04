@@ -141,19 +141,20 @@
         }
         .gt-label {
             position: absolute;
-            top: 50%;
+            bottom: 20px;
             left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(34, 197, 94, 0.9);
+            transform: translateX(-50%);
+            background: rgba(34, 197, 94, 0.85);
             color: white;
-            padding: 12px 24px;
+            padding: 8px 16px;
             border-radius: 8px;
             font-weight: bold;
-            font-size: 1.2rem;
+            font-size: 1rem;
             pointer-events: none;
             z-index: 50;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
             text-align: center;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -223,7 +224,7 @@
                         <span v-else class="text-gray-400 ml-1">(???)</span>
                     </div>
                     <div v-if="currentTaskIndex < 5 && currentTask.displayModelAName === 'GT_HR'" class="gt-label">
-                        <i class="fa-solid fa-arrow-pointer mr-2"></i>This is more realistic.<br>Vote for this!
+                        <i class="fa-solid fa-arrow-pointer mr-1"></i> Vote for this (More realistic)
                     </div>
                     <div class="img-wrapper" :style="wrapperStyle">
                         <div v-if="!currentTask.modelABlob" class="absolute inset-0 flex items-center justify-center text-gray-500">
@@ -241,7 +242,7 @@
                         <span v-else class="text-gray-400 ml-1">(???)</span>
                     </div>
                     <div v-if="currentTaskIndex < 5 && currentTask.displayModelBName === 'GT_HR'" class="gt-label">
-                        <i class="fa-solid fa-arrow-pointer mr-2"></i>This is more realistic.<br>Vote for this!
+                        <i class="fa-solid fa-arrow-pointer mr-1"></i> Vote for this (More realistic)
                     </div>
                     <div class="img-wrapper" :style="wrapperStyle">
                         <div v-if="!currentTask.modelBBlob" class="absolute inset-0 flex items-center justify-center text-gray-500">
