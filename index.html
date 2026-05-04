@@ -351,30 +351,20 @@
                         const swapped = Math.random() > 0.5;
                         
                         // 根据给定的比例分配对比组合：
-                        // 9B + zimage: 5
-                        // 9B + baseline: 15
-                        // zimage + baseline: 15
-                        // baseline + baseline: 15
-                        // 总权重 = 50
-                        const randWeight = Math.random() * 50;
+                        // 目前只保留 9B + baseline 和 zimage + baseline 两种情况
+                        // 比例各占 50%
+                        const randWeight = Math.random();
                         let currentPair = [];
                         let pairType = '';
 
-                        if (randWeight < 5) {
-                            currentPair = [model9B, modelZimage];
-                            pairType = '9B vs zimage';
-                        } else if (randWeight < 20) {
+                        if (randWeight < 0.5) {
                             const randomBaseline = baselineModels[Math.floor(Math.random() * baselineModels.length)];
                             currentPair = [model9B, randomBaseline];
                             pairType = '9B vs baseline';
-                        } else if (randWeight < 35) {
+                        } else {
                             const randomBaseline = baselineModels[Math.floor(Math.random() * baselineModels.length)];
                             currentPair = [modelZimage, randomBaseline];
                             pairType = 'zimage vs baseline';
-                        } else {
-                            const shuffledBaselines = shuffleArray([...baselineModels]);
-                            currentPair = [shuffledBaselines[0], shuffledBaselines[1]];
-                            pairType = 'baseline vs baseline';
                         }
 
                         // 打乱它们，决定谁是 selectedModel1，谁是 selectedModel2
