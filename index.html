@@ -211,14 +211,14 @@
                 Super-Res Arena
             </h1>
             <div class="flex items-center space-x-2 text-sm font-medium text-gray-600">
-                <span>Progress:</span>
-                <span v-if="currentTaskIndex < 3" class="text-indigo-600 font-bold">Tutorial</span>
+                <span>Progress / 进度:</span>
+                <span v-if="currentTaskIndex < 3" class="text-indigo-600 font-bold">Tutorial / 教程</span>
                 <span v-else :class="{'text-green-600 font-bold': completedCount >= targetTaskCount}">
                     <template v-if="completedCount < targetTaskCount">
                         {{ completedCount }} / {{ targetTaskCount }}
                     </template>
                     <template v-else>
-                        {{ completedCount }} Evaluated <span class="text-gray-500 font-normal text-xs ml-1">(Target: {{ targetTaskCount }}+)</span>
+                        {{ completedCount }} Evaluated / 已评测 <span class="text-gray-500 font-normal text-xs ml-1">(Target / 目标: {{ targetTaskCount }}+)</span>
                     </template>
                 </span>
                 <div class="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -239,25 +239,26 @@
             <div v-if="currentTaskIndex < 3" class="bg-green-50 border border-green-200 text-green-800 rounded-lg px-5 py-3 shadow-sm flex items-center gap-3">
                 <i class="fa-solid fa-graduation-cap text-green-600 text-xl"></i>
                 <div>
-                    <h3 class="font-bold">Tutorial: How to evaluate ({{ currentTaskIndex + 1 }}/3)</h3>
-                    <p class="text-sm opacity-90">Please select the image that looks <strong>more realistic</strong>. In this tutorial, the flashing image is the real Ground Truth photo. Choose it to learn what we are looking for!</p>
+                    <h3 class="font-bold">Tutorial: How to evaluate / 教程：如何评测 ({{ currentTaskIndex + 1 }}/3)</h3>
+                    <p class="text-sm opacity-90">Please select the image that looks <strong>more realistic</strong>. In this tutorial, the flashing image is the real Ground Truth photo. Choose it to learn what we are looking for!<br/>
+                    请选择看起来<strong>更真实</strong>的图像。在本教程中，发光的图像是真实的 Ground Truth 照片，请选择它以了解我们的评测标准！</p>
                 </div>
             </div>
 
             <!-- 退化信息条 -->
             <div class="bg-white rounded-lg px-5 py-3 shadow-sm border flex items-center justify-between">
                 <div class="flex items-center gap-4">
-                    <span class="font-bold text-gray-700">Task #{{ currentTask.originalId }}</span>
+                    <span class="font-bold text-gray-700">Task / 任务 #{{ currentTask.originalId }}</span>
                     <span class="text-sm text-gray-500"><i class="fa-solid fa-circle-info text-indigo-400 mr-1"></i>{{ currentTask.description }}</span>
                 </div>
-                <div class="text-xs text-gray-400">Scroll to zoom · Drag to pan · Synced</div>
+                <div class="text-xs text-gray-400">Scroll to zoom · Drag to pan · Synced <br/>(滚动缩放 · 拖拽平移 · 同步)</div>
             </div>
 
             <!-- 三个同步面板 -->
             <div class="sync-viewer-container w-full">
                 <!-- LR Panel -->
                 <div class="sync-panel" ref="lrPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
-                    <div class="panel-label">LR Image</div>
+                    <div class="panel-label">LR Image / 低分辨率原图</div>
                     <div class="sync-panel-inner">
                         <div class="img-wrapper" :style="wrapperStyle">
                             <div v-if="!currentTask.lrBlob" class="absolute inset-0 flex items-center justify-center text-gray-500">
@@ -271,11 +272,11 @@
 
                 <div class="sync-panel vote-panel" :class="{'gt-highlight': currentTaskIndex < 3 && currentTask.displayModelAName === 'GT_HR'}" ref="modelAPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
                     <div class="panel-label">
-                        Model A <span v-if="revealed" class="text-indigo-300 ml-1">({{ currentTask.displayModelAName }})</span>
+                        Model A / 模型 A <span v-if="revealed" class="text-indigo-300 ml-1">({{ currentTask.displayModelAName }})</span>
                         <span v-else class="text-gray-400 ml-1">(???)</span>
                     </div>
                     <div v-if="currentTaskIndex < 3 && currentTask.displayModelAName === 'GT_HR'" class="gt-label">
-                        <i class="fa-solid fa-hand-pointer mr-1"></i> Vote for this (More realistic)
+                        <i class="fa-solid fa-hand-pointer mr-1"></i> Vote for this (More realistic) / 投给这张 (更真实)
                     </div>
                     <div class="sync-panel-inner">
                         <div class="img-wrapper" :style="wrapperStyle">
@@ -291,11 +292,11 @@
                 <!-- Model B Panel -->
                 <div class="sync-panel vote-panel" :class="{'gt-highlight': currentTaskIndex < 3 && currentTask.displayModelBName === 'GT_HR'}" ref="modelBPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
                     <div class="panel-label">
-                        Model B <span v-if="revealed" class="text-indigo-300 ml-1">({{ currentTask.displayModelBName }})</span>
+                        Model B / 模型 B <span v-if="revealed" class="text-indigo-300 ml-1">({{ currentTask.displayModelBName }})</span>
                         <span v-else class="text-gray-400 ml-1">(???)</span>
                     </div>
                     <div v-if="currentTaskIndex < 3 && currentTask.displayModelBName === 'GT_HR'" class="gt-label">
-                        <i class="fa-solid fa-hand-pointer mr-1"></i> Vote for this (More realistic)
+                        <i class="fa-solid fa-hand-pointer mr-1"></i> Vote for this (More realistic) / 投给这张 (更真实)
                     </div>
                     <div class="sync-panel-inner">
                         <div class="img-wrapper" :style="wrapperStyle">
@@ -315,18 +316,18 @@
                     <button @click="vote('A')" :disabled="revealed" 
                          class="px-8 py-3 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2"
                          :class="currentTaskIndex < 3 && currentTask.displayModelAName === 'GT_HR' ? 'bg-green-500 hover:bg-green-600 ring-4 ring-green-300' : 'bg-indigo-600 hover:bg-indigo-700'">
-                         <i class="fa-solid fa-hand-point-left"></i> Model A is better
+                         <i class="fa-solid fa-hand-point-left"></i> Model A is better / 模型 A 更好
                      </button>
                      <button @click="vote('B')" :disabled="revealed" 
                          class="px-8 py-3 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2"
                          :class="currentTaskIndex < 3 && currentTask.displayModelBName === 'GT_HR' ? 'bg-green-500 hover:bg-green-600 ring-4 ring-green-300' : 'bg-indigo-600 hover:bg-indigo-700'">
-                         Model B is better <i class="fa-solid fa-hand-point-right"></i>
+                         Model B is better / 模型 B 更好 <i class="fa-solid fa-hand-point-right"></i>
                      </button>
                     <button @click="vote('Tie')" :disabled="revealed" class="px-5 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2">
-                        <i class="fa-solid fa-handshake"></i> Tie
+                        <i class="fa-solid fa-handshake"></i> Tie / 打平
                     </button>
                     <button @click="vote('BothBad')" :disabled="revealed" class="px-5 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2">
-                        <i class="fa-solid fa-thumbs-down"></i> Both are bad
+                        <i class="fa-solid fa-thumbs-down"></i> Both are bad / 都很差
                     </button>
                 </div>
 
@@ -334,7 +335,7 @@
                 <div class="mt-4 flex flex-col items-center">
                     <div v-if="revealed" class="px-6 py-4 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm font-bold shadow-inner mb-4 flex flex-col items-center justify-center animate-fade-in-up">
                         <button @click="nextTask" class="px-8 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 font-bold transition-all shadow-md hover:shadow-lg hover:scale-105 flex items-center gap-2">
-                            Next Image <i class="fa-solid fa-arrow-right"></i>
+                            Next Image / 下一张图片 <i class="fa-solid fa-arrow-right"></i>
                         </button>
                     </div>
                 </div>
@@ -346,32 +347,32 @@
             <!-- 完成页面 -->
             <div v-else class="flex flex-col items-center justify-center min-h-screen p-4 text-center">
                 <!-- 这里可以暂时留空，因为无限模式下很难走到这里，除非题库耗尽且不重复出题 -->
-                <h2 class="text-3xl font-bold text-gray-800 mb-2">All tasks completed!</h2>
-                <p class="text-gray-600 mb-8">You have completed all the tasks. Thank you for your participation.</p>
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">All tasks completed! / 所有任务已完成！</h2>
+                <p class="text-gray-600 mb-8">You have completed all the tasks. Thank you for your participation. / 您已完成所有评测任务，感谢您的参与。</p>
             </div>
 
             <!-- 右下角悬浮提示 -->
             <div v-if="submitSuccess" class="fixed bottom-4 right-4 bg-green-100 text-green-700 px-4 py-2 rounded shadow-lg text-sm font-bold flex items-center animate-fade-in-up">
-                <i class="fa-solid fa-cloud-arrow-up mr-2"></i> Vote synced
+                <i class="fa-solid fa-cloud-arrow-up mr-2"></i> Vote synced / 投票已同步
             </div>
 
         </main>
 
         <!-- Footer -->
         <footer class="bg-white border-t p-4 text-center text-sm text-gray-500 shrink-0">
-            Super-Res Arena &copy; 2026. Blind test platform for image super-resolution evaluation.
+            Super-Res Arena &copy; 2026. Blind test platform for image super-resolution evaluation. / 图像超分辨率盲测评测平台。
         </footer>
 
         <!-- Welcome Modal -->
         <div v-if="showWelcomeModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4" style="background-color: rgba(0, 0, 0, 0.85);">
             <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full p-8 flex flex-col gap-6 animate-fade-in-up">
                 <div class="text-center">
-                    <h2 class="text-3xl font-bold text-gray-800 mb-4">Welcome to Super-Res Arena</h2>
+                    <h2 class="text-3xl font-bold text-gray-800 mb-4">Welcome to Super-Res Arena / 欢迎来到 Super-Res Arena</h2>
                     <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded-lg text-left mb-2 flex items-start gap-3">
                         <i class="fa-solid fa-desktop text-2xl mt-1"></i>
                         <div>
-                            <strong class="block mb-1">Desktop / PC Required</strong>
-                            <p class="text-sm">For the best experience and accurate evaluation, please use a desktop or laptop computer. Mobile screens are too small to compare fine image details.</p>
+                            <strong class="block mb-1">Desktop / PC Required / 请使用电脑端评测</strong>
+                            <p class="text-sm">For the best experience and accurate evaluation, please use a desktop or laptop computer. Mobile screens are too small to compare fine image details. / 为了获得最佳体验和准确的评测结果，请使用台式机或笔记本电脑。手机屏幕太小，无法对比细微的图像细节。</p>
                         </div>
                     </div>
                 </div>
@@ -379,13 +380,13 @@
                 <div class="bg-gray-100 rounded-xl overflow-hidden relative border border-gray-200 shadow-inner" style="padding-top: 56.25%;">
                     <!-- 占位视频：等待用户后续录制并替换根目录下的 tutorial.mp4 -->
                     <video controls class="absolute top-0 left-0 w-full h-full object-cover" src="./tutorial.mp4">
-                        Your browser does not support the video tag.
+                        Your browser does not support the video tag. / 您的浏览器不支持视频标签。
                     </video>
                 </div>
 
                 <div class="text-center mt-2">
                     <button @click="startEvaluation" class="px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-full shadow-lg transition-transform hover:scale-105 text-lg flex items-center gap-2 mx-auto">
-                        <i class="fa-solid fa-play"></i> Start Evaluation
+                        <i class="fa-solid fa-play"></i> Start Evaluation / 开始评测
                     </button>
                 </div>
             </div>
@@ -397,14 +398,14 @@
                 <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="fa-solid fa-trophy text-3xl text-green-500"></i>
                 </div>
-                <h3 class="text-2xl font-bold text-gray-900 mb-2">Target Reached!</h3>
+                <h3 class="text-2xl font-bold text-gray-900 mb-2">Target Reached! / 达成目标！</h3>
                 <p class="text-gray-600 mb-6">
-                    You have successfully completed 30 evaluations. Your contribution is highly appreciated! <br><br>
-                    You can either stop here and close the page, or continue testing to help us gather more data.
+                    You have successfully completed 30 evaluations. Your contribution is highly appreciated! / 您已成功完成 30 轮评测，非常感谢您的贡献！<br><br>
+                    You can either stop here and close the page, or continue testing to help us gather more data. / 您可以到此为止并关闭页面，也可以继续测试以帮助我们收集更多数据。
                 </p>
                 <div class="flex justify-center gap-4">
                     <button @click="showMilestoneModal = false" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors">
-                        Continue Testing
+                        Continue Testing / 继续测试
                     </button>
                 </div>
             </div>
