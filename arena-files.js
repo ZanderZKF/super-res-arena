@@ -136,6 +136,5 @@ window.ARENA_FILES = [
   '0000240x4.png',
   '0000243x4.png',
   '0000244x4.png',
-  '0000245x4.png',
   '0000248x4.png'
 ];
