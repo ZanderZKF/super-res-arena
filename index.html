@@ -141,20 +141,32 @@
         }
         .gt-label {
             position: absolute;
-            bottom: 20px;
+            bottom: -32px; /* 移出图片，放在框的下方 */
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(34, 197, 94, 0.85);
+            background: rgba(34, 197, 94, 0.9);
             color: white;
-            padding: 8px 16px;
-            border-radius: 8px;
+            padding: 4px 12px;
+            border-radius: 6px;
             font-weight: bold;
-            font-size: 1rem;
+            font-size: 0.9rem;
             pointer-events: none;
             z-index: 50;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             text-align: center;
             white-space: nowrap;
+        }
+        /* 为面板底部预留空间以放置标签，并允许标签超出 overflow:hidden */
+        .sync-panel.vote-panel {
+            overflow: visible !important;
+            margin-bottom: 24px;
+        }
+        /* 将原来的 overflow hidden 转移到图片包裹层 */
+        .sync-panel.vote-panel .img-wrapper {
+            border-radius: 12px;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
         }
     </style>
 </head>
@@ -224,7 +236,7 @@
                         <span v-else class="text-gray-400 ml-1">(???)</span>
                     </div>
                     <div v-if="currentTaskIndex < 5 && currentTask.displayModelAName === 'GT_HR'" class="gt-label">
-                        <i class="fa-solid fa-arrow-pointer mr-1"></i> Vote for this (More realistic)
+                        <i class="fa-solid fa-hand-pointer mr-1"></i> Vote for this (More realistic)
                     </div>
                     <div class="img-wrapper" :style="wrapperStyle">
                         <div v-if="!currentTask.modelABlob" class="absolute inset-0 flex items-center justify-center text-gray-500">
@@ -242,7 +254,7 @@
                         <span v-else class="text-gray-400 ml-1">(???)</span>
                     </div>
                     <div v-if="currentTaskIndex < 5 && currentTask.displayModelBName === 'GT_HR'" class="gt-label">
-                        <i class="fa-solid fa-arrow-pointer mr-1"></i> Vote for this (More realistic)
+                        <i class="fa-solid fa-hand-pointer mr-1"></i> Vote for this (More realistic)
                     </div>
                     <div class="img-wrapper" :style="wrapperStyle">
                         <div v-if="!currentTask.modelBBlob" class="absolute inset-0 flex items-center justify-center text-gray-500">
