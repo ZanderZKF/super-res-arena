@@ -351,18 +351,23 @@
                         // 总权重 = 50
                         const randWeight = Math.random() * 50;
                         let currentPair = [];
+                        let pairType = '';
 
                         if (randWeight < 5) {
                             currentPair = [model9B, modelZimage];
+                            pairType = '9B vs zimage';
                         } else if (randWeight < 20) {
                             const randomBaseline = baselineModels[Math.floor(Math.random() * baselineModels.length)];
                             currentPair = [model9B, randomBaseline];
+                            pairType = '9B vs baseline';
                         } else if (randWeight < 35) {
                             const randomBaseline = baselineModels[Math.floor(Math.random() * baselineModels.length)];
                             currentPair = [modelZimage, randomBaseline];
+                            pairType = 'zimage vs baseline';
                         } else {
                             const shuffledBaselines = shuffleArray([...baselineModels]);
                             currentPair = [shuffledBaselines[0], shuffledBaselines[1]];
+                            pairType = 'baseline vs baseline';
                         }
 
                         // 打乱它们，决定谁是 selectedModel1，谁是 selectedModel2
@@ -391,6 +396,7 @@
                             // 真实的模型名字只在内存里，投票后才揭晓
                             displayModelAName: swapped ? selectedModel2.id : selectedModel1.id,
                             displayModelBName: swapped ? selectedModel1.id : selectedModel2.id,
+                            pairType: pairType,
                             isSwapped: swapped,
                             lrBlob: null,
                             modelABlob: null,
@@ -498,6 +504,7 @@
                         originalId: currentTask.value.originalId,
                         choice: choice,
                         winnerName: winnerName,
+                        pairType: currentTask.value.pairType,
                         // 顺便把这一题的 AB 是谁记录下来，防止无限循环题库时找错
                         modelA: currentTask.value.displayModelAName,
                         modelB: currentTask.value.displayModelBName
@@ -530,6 +537,7 @@
                             timestamp: new Date().toISOString(),
                             image_name: r.originalId, // 明确加上测试的图片名称，如 Canon_001_LR4
                             task_id: r.originalId,
+                            pair_type: r.pairType, // 例如 "9B vs baseline"
                             choice: r.choice,
                             winner: r.winnerName || '无',
                             modelA: r.modelA,
