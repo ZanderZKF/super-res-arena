@@ -159,10 +159,9 @@
         /* 为面板底部预留空间以放置标签，并允许标签超出 overflow:hidden */
         .sync-panel.vote-panel {
             overflow: visible !important;
-            margin-bottom: 24px;
         }
         /* 将原来的 overflow hidden 转移到图片包裹层 */
-        .sync-panel.vote-panel .img-wrapper {
+        .sync-panel .img-wrapper {
             border-radius: 12px;
             overflow: hidden;
             width: 100%;
@@ -180,7 +179,7 @@
             </h1>
             <div class="flex items-center space-x-2 text-sm font-medium text-gray-600">
                 <span>Progress:</span>
-                <span v-if="currentTaskIndex < 5" class="text-indigo-600 font-bold">Tutorial</span>
+                <span v-if="currentTaskIndex < 3" class="text-indigo-600 font-bold">Tutorial</span>
                 <span v-else :class="{'text-green-600 font-bold': completedCount >= targetTaskCount}">
                     {{ completedCount }} / {{ targetTaskCount }}+
                 </span>
@@ -199,10 +198,10 @@
             <template v-if="currentTask && currentTask.originalId">
                 <div class="main-content flex flex-col gap-3 h-full">
             <!-- 引导提示条 -->
-            <div v-if="currentTaskIndex < 5" class="bg-green-50 border border-green-200 text-green-800 rounded-lg px-5 py-3 shadow-sm flex items-center gap-3">
+            <div v-if="currentTaskIndex < 3" class="bg-green-50 border border-green-200 text-green-800 rounded-lg px-5 py-3 shadow-sm flex items-center gap-3">
                 <i class="fa-solid fa-graduation-cap text-green-600 text-xl"></i>
                 <div>
-                    <h3 class="font-bold">Tutorial: How to evaluate ({{ currentTaskIndex + 1 }}/5)</h3>
+                    <h3 class="font-bold">Tutorial: How to evaluate ({{ currentTaskIndex + 1 }}/3)</h3>
                     <p class="text-sm opacity-90">Please select the image that looks <strong>more realistic</strong>. In this tutorial, the flashing image is the real Ground Truth photo. Choose it to learn what we are looking for!</p>
                 </div>
             </div>
@@ -230,12 +229,12 @@
                     <div class="zoom-info">{{ globalScale.toFixed(1) }}x</div>
                 </div>
 
-                <div class="sync-panel vote-panel" :class="{'gt-highlight': currentTaskIndex < 5 && currentTask.displayModelAName === 'GT_HR'}" ref="modelAPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
+                <div class="sync-panel vote-panel" :class="{'gt-highlight': currentTaskIndex < 3 && currentTask.displayModelAName === 'GT_HR'}" ref="modelAPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
                     <div class="panel-label">
                         Model A <span v-if="revealed" class="text-indigo-300 ml-1">({{ currentTask.displayModelAName }})</span>
                         <span v-else class="text-gray-400 ml-1">(???)</span>
                     </div>
-                    <div v-if="currentTaskIndex < 5 && currentTask.displayModelAName === 'GT_HR'" class="gt-label">
+                    <div v-if="currentTaskIndex < 3 && currentTask.displayModelAName === 'GT_HR'" class="gt-label">
                         <i class="fa-solid fa-hand-pointer mr-1"></i> Vote for this (More realistic)
                     </div>
                     <div class="img-wrapper" :style="wrapperStyle">
@@ -248,12 +247,12 @@
                 </div>
 
                 <!-- Model B Panel -->
-                <div class="sync-panel vote-panel" :class="{'gt-highlight': currentTaskIndex < 5 && currentTask.displayModelBName === 'GT_HR'}" ref="modelBPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
+                <div class="sync-panel vote-panel" :class="{'gt-highlight': currentTaskIndex < 3 && currentTask.displayModelBName === 'GT_HR'}" ref="modelBPanel" @mousedown="onMouseDown($event)" @wheel.prevent="onWheel($event)" @mousemove="onMouseMove($event)" @mouseup="onMouseUp" @mouseleave="onMouseUp">
                     <div class="panel-label">
                         Model B <span v-if="revealed" class="text-indigo-300 ml-1">({{ currentTask.displayModelBName }})</span>
                         <span v-else class="text-gray-400 ml-1">(???)</span>
                     </div>
-                    <div v-if="currentTaskIndex < 5 && currentTask.displayModelBName === 'GT_HR'" class="gt-label">
+                    <div v-if="currentTaskIndex < 3 && currentTask.displayModelBName === 'GT_HR'" class="gt-label">
                         <i class="fa-solid fa-hand-pointer mr-1"></i> Vote for this (More realistic)
                     </div>
                     <div class="img-wrapper" :style="wrapperStyle">
@@ -270,15 +269,15 @@
             <div class="bg-white rounded-xl shadow-sm border p-4 flex flex-col items-center gap-4 relative w-full shrink-0">
                 <div class="flex flex-wrap justify-center gap-3">
                     <button @click="vote('A')" :disabled="revealed" 
-                        class="px-8 py-3 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2"
-                        :class="currentTaskIndex < 5 && currentTask.displayModelAName === 'GT_HR' ? 'bg-green-500 hover:bg-green-600 ring-4 ring-green-300' : 'bg-indigo-600 hover:bg-indigo-700'">
-                        <i class="fa-solid fa-hand-point-left"></i> Model A is better
-                    </button>
-                    <button @click="vote('B')" :disabled="revealed" 
-                        class="px-8 py-3 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2"
-                        :class="currentTaskIndex < 5 && currentTask.displayModelBName === 'GT_HR' ? 'bg-green-500 hover:bg-green-600 ring-4 ring-green-300' : 'bg-indigo-600 hover:bg-indigo-700'">
-                        Model B is better <i class="fa-solid fa-hand-point-right"></i>
-                    </button>
+                         class="px-8 py-3 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2"
+                         :class="currentTaskIndex < 3 && currentTask.displayModelAName === 'GT_HR' ? 'bg-green-500 hover:bg-green-600 ring-4 ring-green-300' : 'bg-indigo-600 hover:bg-indigo-700'">
+                         <i class="fa-solid fa-hand-point-left"></i> Model A is better
+                     </button>
+                     <button @click="vote('B')" :disabled="revealed" 
+                         class="px-8 py-3 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2"
+                         :class="currentTaskIndex < 3 && currentTask.displayModelBName === 'GT_HR' ? 'bg-green-500 hover:bg-green-600 ring-4 ring-green-300' : 'bg-indigo-600 hover:bg-indigo-700'">
+                         Model B is better <i class="fa-solid fa-hand-point-right"></i>
+                     </button>
                     <button @click="vote('Tie')" :disabled="revealed" class="px-5 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2">
                         <i class="fa-solid fa-handshake"></i> Tie
                     </button>
@@ -442,11 +441,11 @@
                         const shuffledHr = shuffleArray([...hrAvailableItems]);
                         const shuffledOther = shuffleArray([...otherItems]);
                         
-                        // 前5道题强制使用有 HR 的图片进行 Tutorial
-                        const tutorialItems = shuffledHr.slice(0, 5);
+                        // 确保前3道题来自有 HR 的图片
+                        const tutorialItems = shuffledHr.slice(0, 3);
                         
                         // 剩下的所有图片（包括没被抽作 Tutorial 的 HR 图片，以及本来就没有 HR 的图片）混合打乱
-                        const remainingItems = shuffleArray([...shuffledHr.slice(5), ...shuffledOther]);
+                        const remainingItems = shuffleArray([...shuffledHr.slice(3), ...shuffledOther]);
                         
                         // 组合最终的任务序列，保证所有 154 张图都会被用到！
                         const finalTasks = [...tutorialItems, ...remainingItems];
@@ -458,8 +457,8 @@
                         let currentPair = [];
                         let pairType = '';
 
-                        // 前 5 题固定为 GT vs baseline 示例，用来引导用户选择更真实的图片
-                        if (index < 5) {
+                        // 前 3 题固定为 GT vs baseline 示例，用来引导用户选择更真实的图片
+                        if (index < 3) {
                             const randomBaseline = baselineModels[Math.floor(Math.random() * baselineModels.length)];
                             currentPair = [modelGT, randomBaseline];
                             pairType = 'GT vs baseline (Tutorial)';
@@ -569,8 +568,15 @@
                     }
                 };
 
+                // 增加标志位：阻止多点触控/快速滑动导致的频繁渲染
+                let isThrottled = false;
+
                 const onWheel = (e) => {
-                    const delta = e.deltaY > 0 ? 0.85 : 1.15;
+                    if (isThrottled) return;
+                    isThrottled = true;
+                    requestAnimationFrame(() => { isThrottled = false; });
+
+                    const delta = e.deltaY > 0 ? 0.9 : 1.1; // 稍微调慢缩放速度，手感更好
                     const oldScale = globalScale.value;
                     const newScale = Math.min(Math.max(oldScale * delta, 0.1), 30);
                     const factor = newScale / oldScale;
@@ -579,23 +585,32 @@
                     const mouseX = e.clientX - rect.left - rect.width / 2;
                     const mouseY = e.clientY - rect.top - rect.height / 2;
 
+                    // 计算以鼠标为中心的缩放偏移
                     globalOffsetX.value = mouseX - factor * (mouseX - globalOffsetX.value);
                     globalOffsetY.value = mouseY - factor * (mouseY - globalOffsetY.value);
                     globalScale.value = newScale;
                 };
 
                 const onMouseDown = (e) => {
+                    if (e.button !== 0) return; // 只响应左键
                     isDragging = true;
                     dragStartX = e.clientX;
                     dragStartY = e.clientY;
                     dragStartOffsetX = globalOffsetX.value;
                     dragStartOffsetY = globalOffsetY.value;
+                    document.body.style.cursor = 'grabbing';
                 };
 
                 const onMouseMove = (e) => {
                     if (!isDragging) return;
-                    globalOffsetX.value = dragStartOffsetX + (e.clientX - dragStartX);
-                    globalOffsetY.value = dragStartOffsetY + (e.clientY - dragStartY);
+                    if (isThrottled) return;
+                    isThrottled = true;
+                    requestAnimationFrame(() => { isThrottled = false; });
+
+                    const dx = e.clientX - dragStartX;
+                    const dy = e.clientY - dragStartY;
+                    globalOffsetX.value = dragStartOffsetX + dx;
+                    globalOffsetY.value = dragStartOffsetY + dy;
                 };
 
                 const onMouseUp = () => {
@@ -621,8 +636,8 @@
                     };
                     results.value.push(record);
                     
-                    // 如果是前5道教学题，不计入进度条
-                    if (currentTaskIndex.value >= 5) {
+                    // 如果是前3道教学题，不计入进度条
+                    if (currentTaskIndex.value >= 3) {
                         completedCount.value++;
                     }
 
