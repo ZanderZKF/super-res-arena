@@ -42,8 +42,8 @@
             image-rendering: pixelated;
             width: 100%;
             height: 100%;
-            /* 取消之前的 4 倍硬编码，改用 CSS cover 完全填满父容器 */
-            object-fit: cover !important;
+            /* 改用 contain 确保图片完整显示，不被裁切 */
+            object-fit: contain !important;
         }
         .img-wrapper {
             position: relative;
@@ -197,8 +197,8 @@
         .sync-panel .img-wrapper img {
             width: 100%;
             height: 100%;
-            /* 统一使用 cover 铺满并裁切，保证三个框的图片大小绝对一致贴合边缘 */
-            object-fit: cover; 
+            /* 统一使用 contain 确保完整显示图片，不裁切 */
+            object-fit: contain; 
         }
     </style>
 </head>
